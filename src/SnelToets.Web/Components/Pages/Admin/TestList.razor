@@ -1,0 +1,92 @@
+@page "/beheer/toetsen"
+@using SnelToets.Web.Components.Admin
+@inject ITestService Tests
+
+<PageTitle>Toetsen – Beheer</PageTitle>
+
+<AdminGate>
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="/beheer">Beheer</a><span class="sep"></span><span>Toetsen</span>
+    </nav>
+    <div class="page-header row between">
+        <h1>Toetsen</h1>
+        <a class="btn btn-primary" href="/beheer/toets/nieuw">+ Nieuwe toets</a>
+    </div>
+
+    <ErrorList Errors="errors" />
+
+    @if (rows is null)
+    {
+        <p class="muted">Laden…</p>
+    }
+    else if (rows.Count == 0)
+    {
+        <div class="card empty">
+            <p>Nog geen toetsen. Stel er een samen uit onderwerpen of losse vragen.</p>
+            <a class="btn btn-primary" href="/beheer/toets/nieuw">Eerste toets maken</a>
+        </div>
+    }
+    else
+    {
+        <ul class="card test-list">
+            @foreach (var r in rows)
+            {
+                <li @key="r.Test.Id">
+                    <a class="t-main" href="@($"/beheer/toets/{r.Test.Id}")">
+                        <span class="t-title">@r.Test.Title</span>
+                        <span class="t-meta">
+                            <span class="badge @(r.Test.Mode == TestMode.Practice ? "good" : "primary")">@AdminText.ModeName(r.Test.Mode)</span>
+                            <span class="badge">@(r.Count?.ToString() ?? "?") vragen</span>
+                            @if (r.Test.TimeLimitMinutes is int min) { <span class="badge">@min min</span> }
+                            <span class="badge">≥ @r.Test.PassPercentage%</span>
+                            <SourceBadge Source="r.Test.Source" />
+                        </span>
+                    </a>
+                    <span class="t-actions">
+                        <a class="btn btn-sm" href="@($"/beheer/toets/{r.Test.Id}")">Bewerken</a>
+                        <a class="btn btn-sm" href="@($"/toets/{r.Test.Id}")">Bekijk als student</a>
+                        <ConfirmButton Small="true" Label="Verwijderen" ConfirmLabel="Ja, verwijder" OnConfirm="() => Delete(r.Test.Id)" />
+                    </span>
+                </li>
+            }
+        </ul>
+    }
+</AdminGate>
+
+@code {
+    private record Row(Test Test, int? Count);
+
+    private List<Row>? rows;
+    private List<string>? errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var list = new List<Row>();
+            foreach (var t in (await Tests.GetTestsAsync()).OrderBy(t => t.Title))
+            {
+                int? count = null;
+                try { count = await Tests.CountQuestionsAsync(t.Id); } catch { /* show "?" */ }
+                list.Add(new Row(t, count));
+            }
+            rows = list;
+        }
+        catch (Exception ex)
+        {
+            rows = [];
+            errors = [AdminText.ErrorMessage(ex)];
+        }
+    }
+
+    private async Task Delete(int id)
+    {
+        try
+        {
+            await Tests.DeleteTestAsync(id);
+            rows?.RemoveAll(r => r.Test.Id == id);
+            errors = null;
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+    }
+}

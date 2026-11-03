@@ -1,0 +1,21 @@
+@* Shows validation / service errors above a form. *@
+@if (Errors is { Count: > 0 })
+{
+    <div class="alert bad" role="alert">
+        @if (Errors.Count == 1)
+        {
+            <span>@Errors[0]</span>
+        }
+        else
+        {
+            <strong>Controleer het volgende:</strong>
+            <ul class="errors">
+                @foreach (var e in Errors) { <li>@e</li> }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<string>? Errors { get; set; }
+}

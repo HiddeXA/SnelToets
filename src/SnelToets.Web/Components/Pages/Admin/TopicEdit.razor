@@ -1,0 +1,268 @@
+@page "/beheer/onderwerp/{TopicId:int}"
+@using SnelToets.Web.Components.Admin
+@implements IDisposable
+@inject IContentService Content
+@inject NavigationManager Nav
+
+<PageTitle>@(topic?.Name ?? "Onderwerp") – Beheer</PageTitle>
+
+<AdminGate>
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="/beheer">Beheer</a><span class="sep"></span>
+        @if (topic?.Subject is not null)
+        {
+            <a href="@($"/beheer/vak/{topic.SubjectId}")">@topic.Subject.Name</a><span class="sep"></span>
+        }
+        <span>@(topic?.Name ?? "Onderwerp")</span>
+    </nav>
+
+    @if (loading)
+    {
+        <p class="muted">Laden…</p>
+    }
+    else if (topic is null)
+    {
+        <ErrorList Errors="errors" />
+        <div class="card empty">
+            <p>@(errors is null ? "Dit onderwerp bestaat niet (meer)." : "Kon de gegevens niet laden.")</p>
+            <a class="btn" href="/beheer">Terug naar beheer</a>
+        </div>
+    }
+    else
+    {
+        <div class="page-header row between">
+            <h1>@topic.Name</h1>
+            <div class="btn-row">
+                <a class="btn btn-sm" href="@($"/onderwerp/{topic.Id}")">Bekijk als student</a>
+                <a class="btn btn-primary btn-sm" href="@($"/beheer/vraag/nieuw?topic={topic.Id}")">+ Nieuwe vraag</a>
+            </div>
+        </div>
+
+        <section class="card">
+            <div class="row between mb-1">
+                <h2>Vragen <span class="muted small">(@questions.Count@(questions.Count >= PageSize ? "+" : ""))</span></h2>
+            </div>
+            <input type="search" class="mb-1" placeholder="Zoek in vragen…" aria-label="Zoek in vragen"
+                   @bind="search" @bind:event="oninput" @bind:after="SearchChanged" />
+            <ErrorList Errors="listErrors" />
+            @if (questions.Count == 0)
+            {
+                <div class="empty">
+                    @if (string.IsNullOrWhiteSpace(search))
+                    {
+                        <p>Nog geen vragen in dit onderwerp.</p>
+                        <div class="btn-row" style="justify-content:center">
+                            <a class="btn btn-primary" href="@($"/beheer/vraag/nieuw?topic={topic.Id}")">Eerste vraag maken</a>
+                            <a class="btn" href="/beheer/import">Importeren</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p>Geen vragen gevonden voor ‘@search’.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <ul class="q-list">
+                    @foreach (var q in questions)
+                    {
+                        <li @key="q.Id">
+                            <a class="q-main" href="@($"/beheer/vraag/{q.Id}")">
+                                <span class="q-prompt">@AdminText.Snippet(string.IsNullOrWhiteSpace(q.Context) ? q.Prompt : q.Prompt + " — " + q.Context)</span>
+                                <span class="q-meta">
+                                    <span class="badge primary" title="@AdminText.TypeName(q.Type)">@AdminText.TypeName(q.Type)</span>
+                                    @if (string.IsNullOrWhiteSpace(q.Tip))
+                                    {
+                                        <span class="badge bad" title="Geen tip: de student krijgt geen uitleg na een fout antwoord">geen tip</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge good" title="Heeft een tip">tip ✓</span>
+                                    }
+                                    <SourceBadge Source="q.Source" />
+                                    <span class="badge" title="Moeilijkheid">@AdminText.DifficultyName(q.Difficulty)</span>
+                                </span>
+                            </a>
+                            <span class="q-actions">
+                                <a class="btn btn-sm" href="@($"/beheer/vraag/{q.Id}")">Bewerken</a>
+                                <button type="button" class="btn btn-sm" disabled="@busy" @onclick="() => Duplicate(q.Id)">Dupliceren</button>
+                                <ConfirmButton Small="true" Label="Verwijderen" ConfirmLabel="Ja, verwijder" OnConfirm="() => DeleteQuestion(q.Id)" />
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="card">
+            <h2>Onderwerp bewerken</h2>
+            <ErrorList Errors="errors" />
+            @if (saved) { <div class="alert good">Opgeslagen.</div> }
+            <form @onsubmit="Save">
+                <div class="field">
+                    <label for="t-name">Naam</label>
+                    <input id="t-name" type="text" @bind="name" />
+                </div>
+                <div class="field">
+                    <div class="row between">
+                        <label for="t-theory">Theorie <span class="muted">(Markdown)</span></label>
+                        <button type="button" class="btn btn-sm btn-ghost" @onclick="() => showPreview = !showPreview">
+                            @(showPreview ? "Bewerken" : "Voorbeeld")
+                        </button>
+                    </div>
+                    @if (showPreview)
+                    {
+                        <div class="theory-preview">
+                            @if (string.IsNullOrWhiteSpace(theory))
+                            {
+                                <p class="muted">(nog geen theorie)</p>
+                            }
+                            else
+                            {
+                                <MarkdownView Text="@theory" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <textarea id="t-theory" class="code theory" rows="14" @bind="theory" @bind:event="oninput"
+                                  placeholder="## De regel&#10;Uitleg met **voorbeelden**…&#10;&#10;- punt 1&#10;- punt 2"></textarea>
+                        <span class="hint">Koppen met ##, **vet**, *schuin*, lijstjes met -, tabellen en &gt; voor een opvallend kader.</span>
+                    }
+                </div>
+                <div class="row between">
+                    <button type="submit" class="btn btn-primary" disabled="@busy">Opslaan</button>
+                    <SourceBadge Source="topic.Source" />
+                </div>
+            </form>
+        </section>
+
+        <section class="card danger-zone">
+            <h2>Onderwerp verwijderen</h2>
+            <ConfirmButton Label="Onderwerp verwijderen" ConfirmLabel="Ja, verwijder" OnConfirm="Delete">
+                Je verwijdert <strong>@topic.Name</strong> met alle vragen
+                (@(string.IsNullOrWhiteSpace(search) ? questions.Count.ToString() : "ook die buiten de zoekopdracht")) en de scores van studenten voor dit onderwerp.
+            </ConfirmButton>
+        </section>
+    }
+</AdminGate>
+
+@code {
+    [Parameter] public int TopicId { get; set; }
+
+    private const int PageSize = 200;
+    private Topic? topic;
+    private List<Question> questions = [];
+    private bool loading = true, busy, saved, showPreview;
+    private string? name, theory, search;
+    private List<string>? errors, listErrors;
+    private CancellationTokenSource? searchCts;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try
+        {
+            topic = await Content.GetTopicAsync(TopicId);
+            if (topic is not null)
+            {
+                name = topic.Name;
+                theory = topic.TheoryMarkdown;
+                await LoadQuestions();
+            }
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        loading = false;
+    }
+
+    private async Task LoadQuestions()
+    {
+        try
+        {
+            questions = await Content.GetQuestionsAsync(TopicId, string.IsNullOrWhiteSpace(search) ? null : search.Trim(), 0, PageSize);
+            listErrors = null;
+        }
+        catch (Exception ex) { listErrors = [AdminText.ErrorMessage(ex)]; }
+    }
+
+    private async Task SearchChanged()
+    {
+        // Debounce typing a little.
+        searchCts?.Cancel();
+        searchCts = new CancellationTokenSource();
+        var token = searchCts.Token;
+        try { await Task.Delay(250, token); }
+        catch (TaskCanceledException) { return; }
+        await LoadQuestions();
+    }
+
+    private async Task Save()
+    {
+        saved = false;
+        if (string.IsNullOrWhiteSpace(name)) { errors = ["Geef het onderwerp een naam."]; return; }
+        busy = true;
+        try
+        {
+            var updated = await Content.UpdateTopicAsync(new Topic
+            {
+                Id = TopicId,
+                SubjectId = topic!.SubjectId,
+                Name = name.Trim(),
+                TheoryMarkdown = QuestionDraft.Clean(theory),
+                SortOrder = topic.SortOrder,
+                Source = topic.Source,
+                CreatedAt = topic.CreatedAt
+            });
+            updated.Subject ??= topic.Subject;
+            topic = updated;
+            errors = null;
+            saved = true;
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private async Task Duplicate(int questionId)
+    {
+        busy = true;
+        try
+        {
+            var original = await Content.GetQuestionAsync(questionId);
+            if (original is null) { listErrors = ["Deze vraag bestaat niet meer."]; return; }
+            var draft = QuestionDraft.From(original);
+            draft.Id = 0;
+            draft.ExternalId = null;
+            draft.Source = ContentSource.Manual;
+            draft.CreatedAt = DateTime.UtcNow;
+            var copy = await Content.CreateQuestionAsync(draft.ToQuestion());
+            Nav.NavigateTo($"/beheer/vraag/{copy.Id}");
+        }
+        catch (Exception ex) { listErrors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private async Task DeleteQuestion(int questionId)
+    {
+        try
+        {
+            await Content.DeleteQuestionAsync(questionId);
+            questions.RemoveAll(q => q.Id == questionId);
+            listErrors = null;
+        }
+        catch (Exception ex) { listErrors = [AdminText.ErrorMessage(ex)]; }
+    }
+
+    private async Task Delete()
+    {
+        try
+        {
+            var subjectId = topic!.SubjectId;
+            await Content.DeleteTopicAsync(TopicId);
+            Nav.NavigateTo($"/beheer/vak/{subjectId}");
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+    }
+
+    public void Dispose() => searchCts?.Cancel();
+}

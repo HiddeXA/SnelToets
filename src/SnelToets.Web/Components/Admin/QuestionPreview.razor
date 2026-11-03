@@ -1,0 +1,147 @@
+@* Live preview of a question as the student sees it. Try answering: wrong shows the tip, like in the practice player. *@
+<div class="preview">
+    @if (!string.IsNullOrWhiteSpace(Question.Context))
+    {
+        <div class="question-context"><MarkdownView Text="@Question.Context" Inline="true" /></div>
+    }
+    <div class="question-prompt">
+        @if (string.IsNullOrWhiteSpace(Question.Prompt))
+        {
+            <span class="muted">(nog geen vraag)</span>
+        }
+        else
+        {
+            <MarkdownView Text="@Question.Prompt" Inline="true" />
+        }
+    </div>
+    @if (Question.Type == QuestionType.MultipleSelect)
+    {
+        <p class="small muted">Kies alle juiste antwoorden.</p>
+    }
+
+    @if (Question.Type == QuestionType.FillIn)
+    {
+        <input type="text" placeholder="Typ je antwoord" aria-label="Antwoord" @bind="typed" @bind:event="oninput" disabled="@checkedAnswer" />
+    }
+    else
+    {
+        <div class="options">
+            @for (var i = 0; i < Question.Options.Count; i++)
+            {
+                var index = i;
+                var option = Question.Options[i];
+                <button type="button" class="option @OptionClass(index, option)" disabled="@checkedAnswer" @onclick="() => Toggle(index)">
+                    <span class="key">@((char)('A' + index))</span>
+                    <MarkdownView Text="@option.Text" Inline="true" />
+                </button>
+            }
+        </div>
+    }
+
+    @if (!checkedAnswer)
+    {
+        <div class="btn-row mt-1">
+            <button type="button" class="btn btn-sm" disabled="@(!HasAnswer)" @onclick="Check">Controleer</button>
+        </div>
+    }
+    else
+    {
+        <div class="feedback @(isCorrect ? "correct" : "wrong")">
+            <div class="feedback-title">@(isCorrect ? "Goed!" : "Helaas, dat is niet goed.")</div>
+            @if (!isCorrect && Question.Type == QuestionType.FillIn && Question.AcceptedAnswers.Count > 0)
+            {
+                <p>Goed antwoord: <strong>@string.Join(" / ", Question.AcceptedAnswers)</strong></p>
+            }
+            @foreach (var fb in ChosenFeedback())
+            {
+                <MarkdownView Text="@fb" />
+            }
+            @if (!isCorrect)
+            {
+                @if (string.IsNullOrWhiteSpace(Question.Tip))
+                {
+                    <p class="small"><em>Geen tip ingevuld – de student ziet hier alleen dat het fout is.</em></p>
+                }
+                else
+                {
+                    <div class="tip"><strong>Tip</strong><MarkdownView Text="@Question.Tip" /></div>
+                }
+            }
+            @if (!string.IsNullOrWhiteSpace(Question.Explanation))
+            {
+                <MarkdownView Text="@Question.Explanation" />
+            }
+        </div>
+        <div class="btn-row mt-1">
+            <button type="button" class="btn btn-sm" @onclick="Reset">Opnieuw proberen</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Question Question { get; set; } = new();
+
+    private readonly HashSet<int> selected = [];
+    private string? typed;
+    private bool checkedAnswer;
+    private bool isCorrect;
+
+    private bool HasAnswer => Question.Type == QuestionType.FillIn ? !string.IsNullOrWhiteSpace(typed) : selected.Count > 0;
+
+    protected override void OnParametersSet()
+    {
+        selected.RemoveWhere(i => i >= Question.Options.Count);
+    }
+
+    private void Toggle(int index)
+    {
+        if (Question.Type == QuestionType.MultipleSelect)
+        {
+            if (!selected.Remove(index)) selected.Add(index);
+        }
+        else
+        {
+            selected.Clear();
+            selected.Add(index);
+        }
+    }
+
+    private void Check()
+    {
+        if (Question.Type == QuestionType.FillIn)
+        {
+            var given = Normalize(typed);
+            isCorrect = Question.AcceptedAnswers.Any(a => Normalize(a) == given);
+        }
+        else
+        {
+            var correct = Enumerable.Range(0, Question.Options.Count).Where(i => Question.Options[i].IsCorrect).ToHashSet();
+            isCorrect = correct.Count > 0 && correct.SetEquals(selected);
+        }
+        checkedAnswer = true;
+    }
+
+    private void Reset()
+    {
+        selected.Clear();
+        typed = null;
+        checkedAnswer = false;
+    }
+
+    private IEnumerable<string> ChosenFeedback() =>
+        selected.Where(i => i < Question.Options.Count)
+            .Select(i => Question.Options[i].Feedback)
+            .Where(f => !string.IsNullOrWhiteSpace(f))
+            .Select(f => f!);
+
+    private string OptionClass(int index, AnswerOption option)
+    {
+        if (!checkedAnswer) return selected.Contains(index) ? "selected" : "";
+        if (option.IsCorrect) return "correct";
+        return selected.Contains(index) ? "wrong" : "";
+    }
+
+    // Approximation of the server-side normalisation (trim, case-insensitive, collapse whitespace).
+    private static string Normalize(string? s) =>
+        string.Join(' ', (s ?? "").Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries)).TrimEnd('.', '!', '?');
+}

@@ -1,0 +1,241 @@
+@page "/beheer/vak/{SubjectId:int}"
+@using SnelToets.Web.Components.Admin
+@using System.Text.Json
+@inject IContentService Content
+@inject IImportService Import
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@(subject?.Name ?? "Vak") – Beheer</PageTitle>
+
+<AdminGate>
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="/beheer">Beheer</a><span class="sep"></span><span>@(subject?.Name ?? "Vak")</span>
+    </nav>
+
+    @if (loading)
+    {
+        <p class="muted">Laden…</p>
+    }
+    else if (subject is null)
+    {
+        <ErrorList Errors="errors" />
+        <div class="card empty">
+            <p>@(errors is null ? "Dit vak bestaat niet (meer)." : "Kon de gegevens niet laden.")</p>
+            <a class="btn" href="/beheer">Terug naar beheer</a>
+        </div>
+    }
+    else
+    {
+        <div class="page-header row between">
+            <h1>@subject.Name</h1>
+            <div class="btn-row">
+                <a class="btn btn-sm" href="@($"/vak/{subject.Id}")">Bekijk als student</a>
+                <button type="button" class="btn btn-sm" disabled="@exporting" @onclick="ExportSubject">Exporteer JSON</button>
+            </div>
+        </div>
+
+        <section class="card">
+            <h2>Onderwerpen</h2>
+            @if (topics.Count == 0)
+            {
+                <p class="muted">Nog geen onderwerpen.</p>
+            }
+            else
+            {
+                <ol class="topic-list">
+                    @for (var i = 0; i < topics.Count; i++)
+                    {
+                        var index = i;
+                        var t = topics[i];
+                        <li>
+                            <a class="topic-name" href="@($"/beheer/onderwerp/{t.Id}")">@t.Name</a>
+                            <span class="badge">@Count(t.Id) vr.</span>
+                            <span class="move">
+                                <button type="button" class="btn btn-sm btn-ghost" title="Omhoog" aria-label="@($"{t.Name} omhoog")" disabled="@(index == 0 || busy)" @onclick="() => Move(index, -1)">▲</button>
+                                <button type="button" class="btn btn-sm btn-ghost" title="Omlaag" aria-label="@($"{t.Name} omlaag")" disabled="@(index == topics.Count - 1 || busy)" @onclick="() => Move(index, 1)">▼</button>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            }
+            <form class="row add-topic mt-1" @onsubmit="AddTopic">
+                <input type="text" aria-label="Naam nieuw onderwerp" placeholder="Nieuw onderwerp, bijv. Werkwoordspelling" @bind="newTopic" />
+                <button type="submit" class="btn btn-primary" disabled="@busy">Toevoegen</button>
+            </form>
+            <ErrorList Errors="topicErrors" />
+        </section>
+
+        <section class="card">
+            <h2>Vak bewerken</h2>
+            <ErrorList Errors="errors" />
+            @if (saved) { <div class="alert good">Opgeslagen.</div> }
+            <form @onsubmit="Save">
+                <div class="field">
+                    <label for="s-name">Naam</label>
+                    <input id="s-name" type="text" @bind="name" />
+                </div>
+                <div class="field">
+                    <label for="s-desc">Omschrijving</label>
+                    <textarea id="s-desc" rows="3" @bind="description"></textarea>
+                </div>
+                <div class="field">
+                    <label for="s-color">Kleur</label>
+                    <input id="s-color" type="color" class="color" @bind="color" />
+                </div>
+                <div class="row between">
+                    <button type="submit" class="btn btn-primary" disabled="@busy">Opslaan</button>
+                    <SourceBadge Source="subject.Source" />
+                </div>
+            </form>
+        </section>
+
+        <section class="card danger-zone">
+            <h2>Vak verwijderen</h2>
+            <ConfirmButton Label="Vak verwijderen" ConfirmLabel="Ja, verwijder alles" OnConfirm="Delete">
+                Je verwijdert <strong>@subject.Name</strong> met @topics.Count onderwerp@(topics.Count == 1 ? "" : "en")
+                en @questionTotal vra@(questionTotal == 1 ? "ag" : "gen"), inclusief de scores van studenten. Dit kan niet ongedaan worden gemaakt.
+            </ConfirmButton>
+        </section>
+    }
+</AdminGate>
+
+@code {
+    [Parameter] public int SubjectId { get; set; }
+
+    private Subject? subject;
+    private List<Topic> topics = [];
+    private Dictionary<int, int> counts = [];
+    private bool loading = true, busy, saved, exporting;
+    private string? name, description, color, newTopic;
+    private List<string>? errors, topicErrors;
+    private int questionTotal => counts.Values.Sum();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try
+        {
+            subject = await Content.GetSubjectAsync(SubjectId);
+            if (subject is not null)
+            {
+                name = subject.Name;
+                description = subject.Description;
+                color = subject.Color ?? "#3056d3";
+                await LoadTopics();
+            }
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        loading = false;
+    }
+
+    private async Task LoadTopics()
+    {
+        topics = (await Content.GetTopicsAsync(SubjectId)).OrderBy(t => t.SortOrder).ThenBy(t => t.Id).ToList();
+        counts = await Content.CountQuestionsPerTopicAsync(SubjectId);
+    }
+
+    private int Count(int topicId) => counts.TryGetValue(topicId, out var n) ? n : 0;
+
+    private async Task Save()
+    {
+        saved = false;
+        if (string.IsNullOrWhiteSpace(name)) { errors = ["Geef het vak een naam."]; return; }
+        busy = true;
+        try
+        {
+            subject = await Content.UpdateSubjectAsync(new Subject
+            {
+                Id = SubjectId,
+                Name = name.Trim(),
+                Description = QuestionDraft.Clean(description),
+                Color = color,
+                Source = subject!.Source,
+                CreatedAt = subject.CreatedAt
+            });
+            errors = null;
+            saved = true;
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private async Task AddTopic()
+    {
+        if (string.IsNullOrWhiteSpace(newTopic)) { topicErrors = ["Geef het onderwerp een naam."]; return; }
+        busy = true;
+        try
+        {
+            await Content.CreateTopicAsync(new Topic
+            {
+                SubjectId = SubjectId,
+                Name = newTopic.Trim(),
+                SortOrder = topics.Count == 0 ? 0 : topics.Max(t => t.SortOrder) + 1,
+                Source = ContentSource.Manual
+            });
+            newTopic = null;
+            topicErrors = null;
+            await LoadTopics();
+        }
+        catch (Exception ex) { topicErrors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private async Task Move(int index, int delta)
+    {
+        var target = index + delta;
+        if (target < 0 || target >= topics.Count) return;
+        busy = true;
+        try
+        {
+            (topics[index], topics[target]) = (topics[target], topics[index]);
+            // Renumber all topics 0..n-1 and save the ones whose SortOrder changed.
+            for (var i = 0; i < topics.Count; i++)
+            {
+                var t = topics[i];
+                if (t.SortOrder == i) continue;
+                t.SortOrder = i;
+                await Content.UpdateTopicAsync(new Topic
+                {
+                    Id = t.Id,
+                    SubjectId = t.SubjectId,
+                    Name = t.Name,
+                    TheoryMarkdown = t.TheoryMarkdown,
+                    SortOrder = i,
+                    Source = t.Source,
+                    CreatedAt = t.CreatedAt
+                });
+            }
+            topicErrors = null;
+        }
+        catch (Exception ex)
+        {
+            topicErrors = [AdminText.ErrorMessage(ex)];
+            await LoadTopics();
+        }
+        finally { busy = false; }
+    }
+
+    private async Task ExportSubject()
+    {
+        exporting = true;
+        try
+        {
+            var doc = await Import.ExportAsync(SubjectId);
+            var json = JsonSerializer.Serialize(doc, AdminText.ExportJson);
+            await JS.InvokeVoidAsync("snelToets.download", $"{AdminText.Slug(subject?.Name)}.json", "application/json", json);
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { exporting = false; }
+    }
+
+    private async Task Delete()
+    {
+        try
+        {
+            await Content.DeleteSubjectAsync(SubjectId);
+            Nav.NavigateTo("/beheer");
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+    }
+}

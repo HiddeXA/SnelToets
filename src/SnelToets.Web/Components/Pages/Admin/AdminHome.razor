@@ -1,0 +1,167 @@
+@page "/beheer"
+@using SnelToets.Web.Components.Admin
+@using System.Text.Json
+@inject IContentService Content
+@inject IImportService Import
+@inject IJSRuntime JS
+
+<PageTitle>Beheer – SnelToets</PageTitle>
+
+<AdminGate>
+    <div class="page-header">
+        <h1>Beheer</h1>
+        <p class="lead">Maak vakken, onderwerpen en vragen, importeer vragenbestanden en stel toetsen samen.</p>
+    </div>
+
+    <div class="grid cols-2 mb-2">
+        <a class="card card-link tile" href="/beheer/import">
+            <strong>Vragen importeren</strong>
+            <span class="small muted">JSON- of CSV-bestand uploaden of plakken.</span>
+        </a>
+        <a class="card card-link tile" href="/beheer/toetsen">
+            <strong>Toetsen</strong>
+            <span class="small muted">Oefentoetsen en toetsen samenstellen.</span>
+        </a>
+        <a class="card card-link tile" href="/beheer/ai">
+            <strong>AI koppelen (MCP)</strong>
+            <span class="small muted">Laat een AI-assistent vragen en toetsen maken.</span>
+        </a>
+        <button type="button" class="card card-link tile" disabled="@exporting" @onclick="ExportAll">
+            <strong>@(exporting ? "Bezig met exporteren…" : "Exporteren")</strong>
+            <span class="small muted">Download alles (vakken, vragen, toetsen) als JSON.</span>
+        </button>
+    </div>
+    <ErrorList Errors="exportErrors" />
+
+    <section class="card">
+        <div class="row between mb-1">
+            <h2>Vakken</h2>
+            @if (!showNew)
+            {
+                <button type="button" class="btn btn-primary btn-sm" @onclick="() => showNew = true">+ Nieuw vak</button>
+            }
+        </div>
+
+        @if (showNew)
+        {
+            <form class="new-subject" @onsubmit="CreateSubject">
+                <ErrorList Errors="newErrors" />
+                <div class="field">
+                    <label for="ns-name">Naam</label>
+                    <input id="ns-name" type="text" @bind="newName" placeholder="Bijv. Nederlands 3F" />
+                </div>
+                <div class="field">
+                    <label for="ns-desc">Omschrijving <span class="muted">(optioneel)</span></label>
+                    <input id="ns-desc" type="text" @bind="newDescription" />
+                </div>
+                <div class="field">
+                    <label for="ns-color">Kleur</label>
+                    <input id="ns-color" type="color" class="color" @bind="newColor" />
+                </div>
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary" disabled="@saving">Vak aanmaken</button>
+                    <button type="button" class="btn" @onclick="CancelNew">Annuleren</button>
+                </div>
+            </form>
+        }
+
+        @if (subjects is null)
+        {
+            <p class="muted">Laden…</p>
+        }
+        else if (subjects.Count == 0)
+        {
+            <div class="empty">Nog geen vakken. Maak er een aan of <a href="/beheer/import">importeer vragen</a>.</div>
+        }
+        else
+        {
+            <ul class="subject-list">
+                @foreach (var s in subjects)
+                {
+                    <li>
+                        <a href="@($"/beheer/vak/{s.Subject.Id}")">
+                            <span class="swatch" style="background:@(s.Subject.Color ?? "var(--primary)")"></span>
+                            <span class="name">@s.Subject.Name</span>
+                            <span class="small muted counts">@s.Topics onderwerp@(s.Topics == 1 ? "" : "en") · @s.Questions vra@(s.Questions == 1 ? "ag" : "gen")</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+        <ErrorList Errors="loadErrors" />
+    </section>
+</AdminGate>
+
+@code {
+    private record SubjectRow(Subject Subject, int Topics, int Questions);
+
+    private List<SubjectRow>? subjects;
+    private List<string>? loadErrors, newErrors, exportErrors;
+    private bool showNew, saving, exporting;
+    private string? newName, newDescription;
+    private string newColor = "#3056d3";
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try
+        {
+            var rows = new List<SubjectRow>();
+            foreach (var s in await Content.GetSubjectsAsync())
+            {
+                var topics = await Content.GetTopicsAsync(s.Id);
+                var counts = await Content.CountQuestionsPerTopicAsync(s.Id);
+                rows.Add(new SubjectRow(s, topics.Count, counts.Values.Sum()));
+            }
+            subjects = rows;
+            loadErrors = null;
+        }
+        catch (Exception ex)
+        {
+            subjects = [];
+            loadErrors = [AdminText.ErrorMessage(ex)];
+        }
+    }
+
+    private async Task CreateSubject()
+    {
+        if (string.IsNullOrWhiteSpace(newName)) { newErrors = ["Geef het vak een naam."]; return; }
+        saving = true;
+        try
+        {
+            await Content.CreateSubjectAsync(new Subject
+            {
+                Name = newName.Trim(),
+                Description = QuestionDraft.Clean(newDescription),
+                Color = newColor,
+                Source = ContentSource.Manual
+            });
+            CancelNew();
+            await Load();
+        }
+        catch (Exception ex) { newErrors = [AdminText.ErrorMessage(ex)]; }
+        finally { saving = false; }
+    }
+
+    private void CancelNew()
+    {
+        showNew = false;
+        newName = newDescription = null;
+        newErrors = null;
+    }
+
+    private async Task ExportAll()
+    {
+        exporting = true;
+        exportErrors = null;
+        try
+        {
+            var doc = await Import.ExportAsync();
+            var json = JsonSerializer.Serialize(doc, AdminText.ExportJson);
+            await JS.InvokeVoidAsync("snelToets.download", $"sneltoets-export-{DateTime.Now:yyyy-MM-dd}.json", "application/json", json);
+        }
+        catch (Exception ex) { exportErrors = [AdminText.ErrorMessage(ex)]; }
+        finally { exporting = false; }
+    }
+}

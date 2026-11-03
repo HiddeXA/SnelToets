@@ -1,0 +1,11 @@
+.page-header h1 { margin: 0; }
+.topic-list { list-style: none; margin: 0; padding: 0; counter-reset: topic; }
+.topic-list li { display: flex; align-items: center; gap: .5rem; min-height: 52px; padding: .25rem 0; border-bottom: 1px solid var(--border); counter-increment: topic; }
+.topic-list li::before { content: counter(topic); flex: none; width: 1.6rem; color: var(--text-2); font-variant-numeric: tabular-nums; font-size: .875rem; }
+.topic-name { flex: 1; min-width: 0; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.move { display: inline-flex; flex: none; }
+.move .btn { min-width: 40px; min-height: 40px; padding: 0; }
+.add-topic { flex-wrap: nowrap; }
+.add-topic input { flex: 1; min-width: 0; }
+.color { width: 64px; height: 44px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.danger-zone h2 { color: var(--bad); }
