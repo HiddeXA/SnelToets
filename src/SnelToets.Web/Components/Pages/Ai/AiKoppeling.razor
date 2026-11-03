@@ -1,0 +1,214 @@
+@page "/beheer/ai"
+@using SnelToets.Web.Mcp
+@inject NavigationManager Nav
+@inject ApiKeyGuard KeyGuard
+@inject IJSRuntime JS
+
+<PageTitle>AI koppelen – SnelToets</PageTitle>
+
+<AdminGate>
+    <div class="page-header">
+        <nav class="breadcrumb" aria-label="Kruimelpad">
+            <a href="beheer">Beheer</a><span class="sep"></span><span>AI koppelen</span>
+        </nav>
+        <h1>AI-assistent koppelen</h1>
+        <p class="lead">
+            Laat een AI-assistent (Claude Desktop, Claude Code of een andere MCP-client) vakken, onderwerpen met theorie,
+            vragen en toetsen voor je maken. De assistent praat met SnelToets via het <strong>Model Context Protocol (MCP)</strong>.
+        </p>
+    </div>
+
+    <div class="stack">
+        <section class="card">
+            <h2>1. Het adres van de MCP-server</h2>
+            <p>De assistent maakt verbinding via <em>Streamable HTTP</em> op dit adres:</p>
+            <div class="row">
+                <pre class="spacer" style="margin:0">@mcpUrl</pre>
+                <button class="btn btn-sm" type="button" @onclick='() => Copy("url", mcpUrl)'>@CopyLabel("url")</button>
+            </div>
+
+            @if (KeyGuard.IsEnabled)
+            {
+                <div class="alert good mt-2">
+                    <strong>Er is een API-sleutel ingesteld.</strong> De assistent moet die meesturen met de header
+                    <code>Authorization: Bearer &lt;sleutel&gt;</code> (of <code>X-Api-Key: &lt;sleutel&gt;</code>).
+                    De sleutel zelf wordt hier om veiligheidsredenen niet getoond; vraag hem aan de beheerder van de server.
+                    Vervang in de voorbeelden hieronder <code>@KeyPlaceholder</code> door de sleutel.
+                </div>
+            }
+            else
+            {
+                <div class="alert warn mt-2">
+                    <strong>Er is geen API-sleutel ingesteld.</strong> Iedereen die deze server kan bereiken, kan via MCP en de
+                    REST API inhoud toevoegen en verwijderen. Prima om lokaal te proberen, maar stel een sleutel in voordat je
+                    SnelToets online zet: <code>Mcp:ApiKey</code> in <code>appsettings.json</code> of de omgevingsvariabele
+                    <code>Mcp__ApiKey</code>. Daarna moet elke client de header <code>Authorization: Bearer &lt;sleutel&gt;</code> meesturen.
+                </div>
+            }
+        </section>
+
+        <section class="card">
+            <h2>2. Claude Desktop</h2>
+            <p>
+                Open in Claude Desktop <em>Instellingen → Developer → Edit Config</em> en voeg dit toe aan
+                <code>claude_desktop_config.json</code>. Je hebt <a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a>
+                nodig: <code>mcp-remote</code> zet de lokale verbinding van Claude Desktop om naar HTTP. Start Claude Desktop daarna opnieuw.
+            </p>
+            <pre>@desktopConfig</pre>
+            <div class="btn-row">
+                <button class="btn btn-sm" type="button" @onclick='() => Copy("desktop", desktopConfig)'>@CopyLabel("desktop")</button>
+            </div>
+            @if (isPlainHttpRemote)
+            {
+                <p class="small muted mt-1">
+                    Dit adres gebruikt <code>http://</code> zonder localhost; daarom staat <code>--allow-http</code> erbij.
+                    Gebruik buiten je eigen netwerk altijd https.
+                </p>
+            }
+        </section>
+
+        <section class="card">
+            <h2>3. Claude Code</h2>
+            <p>Voer dit één keer uit in een terminal:</p>
+            <pre>@claudeCodeCommand</pre>
+            <div class="btn-row">
+                <button class="btn btn-sm" type="button" @onclick='() => Copy("code", claudeCodeCommand)'>@CopyLabel("code")</button>
+            </div>
+            <p class="small muted mt-1">Controleer de verbinding met <code>claude mcp list</code> of <code>/mcp</code> in Claude Code.</p>
+        </section>
+
+        <section class="card">
+            <h2>4. Andere MCP-clients (Streamable HTTP)</h2>
+            <p>
+                Elke client die MCP over Streamable HTTP ondersteunt, kan verbinden. Stuur JSON-RPC-berichten met
+                <code>POST</code> naar het adres hierboven, met de headers
+                <code>Content-Type: application/json</code> en <code>Accept: application/json, text/event-stream</code>@(KeyGuard.IsEnabled ? " en de Authorization-header" : "").
+                De server is <em>stateless</em>: er is geen sessie-id nodig. Testen met curl:
+            </p>
+            <pre>@curlExample</pre>
+            <div class="btn-row">
+                <button class="btn btn-sm" type="button" @onclick='() => Copy("curl", curlExample)'>@CopyLabel("curl")</button>
+            </div>
+            <p class="small muted mt-1">
+                Liever zonder MCP? Dezelfde import werkt via de REST API: <code>POST @(apiBase)import</code> met een importbestand
+                (zie de README en <code>docs/import-format.md</code>).
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>Wat kan de assistent?</h2>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Tool</th><th>Wat doet het?</th></tr></thead>
+                    <tbody>
+                        @foreach (var (name, text) in Tools)
+                        {
+                            <tr><td><code>@name</code></td><td>@text</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <p class="small muted mt-1">
+                Daarnaast is er de prompt <code>make_practice_set</code> (vak, onderwerp, niveau, aantal): een kant-en-klare
+                werkinstructie voor een goede oefenreeks met tips en feedback bij foute antwoorden.
+                Alles wat de assistent maakt, krijgt in het beheer het label <span class="badge primary">AI</span>.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>Voorbeeldopdracht</h2>
+            <p>Plak dit in de chat met je assistent als de koppeling werkt:</p>
+            <pre style="white-space:pre-wrap">@ExamplePrompt</pre>
+            <div class="btn-row">
+                <button class="btn btn-primary btn-sm" type="button" @onclick='() => Copy("prompt", ExamplePrompt)'>@CopyLabel("prompt")</button>
+            </div>
+            <p class="small muted mt-1">
+                Tip: controleer AI-vragen altijd even in <a href="beheer">Beheer</a> voordat studenten ermee oefenen.
+                Een vraag aanpassen of verwijderen kan daar met één klik.
+            </p>
+        </section>
+    </div>
+</AdminGate>
+
+@code {
+    private const string KeyPlaceholder = "<JOUW-SLEUTEL>";
+
+    private const string ExamplePrompt =
+        "Maak 15 meerkeuzevragen over de tussen-s voor eerstejaars hbo-studenten. Zet bij elke vraag een tip die de regel " +
+        "toepast op die ene zin (zoals Hogeschooltaal doet) en geef bij elk fout antwoord kort aan waarom het fout is. " +
+        "Zet ze in SnelToets bij het vak 'Nederlands – taalverzorging' onder het onderwerp 'Spelling: tussen-s', met een korte " +
+        "theorie-uitleg in het Nederlands. Maak daarna een oefentoets van 10 willekeurige vragen en geef me de link.";
+
+    private static readonly (string Name, string Text)[] Tools =
+    [
+        ("list_subjects", "Toont alle vakken met onderwerpen en het aantal vragen per onderwerp."),
+        ("get_topic", "Haalt de theorie en een overzicht van de vragen van één onderwerp op."),
+        ("search_questions", "Zoekt vragen op tekst, eventueel binnen één onderwerp."),
+        ("create_subject", "Maakt een nieuw vak (of geeft het bestaande vak met dezelfde naam terug)."),
+        ("create_topic", "Maakt een onderwerp met theorie (Markdown) binnen een vak."),
+        ("update_topic_theory", "Vervangt de theorie (en eventueel de naam) van een onderwerp."),
+        ("create_questions", "Voegt een reeks vragen toe aan een onderwerp; per vraag zie je of die is opgeslagen of wat er mis is."),
+        ("import_content", "Importeert een compleet document met vakken, onderwerpen, vragen en toetsen (eerst gecontroleerd)."),
+        ("get_import_format", "Geeft de beschrijving van het importformaat met een voorbeeld."),
+        ("create_test", "Stelt een toets samen (oefenen of examen, tijdslimiet, slagingspercentage) en geeft de link voor studenten."),
+        ("list_tests", "Toont alle toetsen met hun instellingen en links."),
+        ("delete_question", "Verwijdert één vraag."),
+    ];
+
+    private string mcpUrl = "";
+    private string apiBase = "";
+    private string desktopConfig = "";
+    private string claudeCodeCommand = "";
+    private string curlExample = "";
+    private bool isPlainHttpRemote;
+    private string? copied;
+
+    protected override void OnInitialized()
+    {
+        mcpUrl = Nav.BaseUri + "mcp";
+        apiBase = Nav.BaseUri + "api/";
+        var uri = new Uri(mcpUrl);
+        isPlainHttpRemote = uri.Scheme == Uri.UriSchemeHttp && !uri.IsLoopback;
+        var key = KeyGuard.IsEnabled;
+
+        var args = new List<string> { "\"-y\"", "\"mcp-remote\"", $"\"{mcpUrl}\"" };
+        if (key) { args.Add("\"--header\""); args.Add("\"Authorization:${SNELTOETS_AUTH}\""); }
+        if (isPlainHttpRemote) args.Add("\"--allow-http\"");
+        var env = key ? $",\n      \"env\": {{ \"SNELTOETS_AUTH\": \"Bearer {KeyPlaceholder}\" }}" : "";
+        desktopConfig =
+            "{\n" +
+            "  \"mcpServers\": {\n" +
+            "    \"sneltoets\": {\n" +
+            "      \"command\": \"npx\",\n" +
+            $"      \"args\": [{string.Join(", ", args)}]{env}\n" +
+            "    }\n" +
+            "  }\n" +
+            "}";
+
+        claudeCodeCommand = $"claude mcp add --transport http sneltoets {mcpUrl}" +
+            (key ? $" --header \"Authorization: Bearer {KeyPlaceholder}\"" : "");
+
+        var auth = key ? $"  -H \"Authorization: Bearer {KeyPlaceholder}\" \\\n" : "";
+        curlExample =
+            $"curl -X POST {mcpUrl} \\\n" +
+            "  -H \"Content-Type: application/json\" \\\n" +
+            "  -H \"Accept: application/json, text/event-stream\" \\\n" +
+            auth +
+            "  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}'";
+    }
+
+    private string CopyLabel(string id) => copied == id ? "Gekopieerd ✓" : "Kopiëren";
+
+    private async Task Copy(string id, string text)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            copied = id;
+        }
+        catch (JSException)
+        {
+            copied = null; // Clipboard not available (e.g. plain http); the user can still select the text.
+        }
+    }
+}

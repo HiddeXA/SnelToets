@@ -12,4 +12,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Demo content seeded on first start (single source: samples/demo-nederlands.json at the repo root). -->
+    <EmbeddedResource Include="..\..\samples\demo-nederlands.json" LogicalName="SnelToets.Core.Seed.demo-nederlands.json" Link="Seed\demo-nederlands.json" />
+  </ItemGroup>
+
 </Project>
