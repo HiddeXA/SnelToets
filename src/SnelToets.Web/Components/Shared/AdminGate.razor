@@ -1,0 +1,31 @@
+@* Wrap management pages: <AdminGate> ...page content... </AdminGate>.
+   Shows a pincode form when "Beheer:Pincode" is configured and this circuit has not unlocked yet. *@
+@inject AdminSession Admin
+
+@if (Admin.HasAccess)
+{
+    @ChildContent
+}
+else
+{
+    <div class="card" style="max-width:420px;margin:2rem auto;">
+        <h1>Beheer</h1>
+        <p class="muted">Voer de pincode in om vragen en toetsen te beheren.</p>
+        <form @onsubmit="Unlock">
+            <div class="field">
+                <label for="pin">Pincode</label>
+                <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" @bind="pin" />
+                @if (failed) { <span class="error-text">Onjuiste pincode.</span> }
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Ontgrendelen</button>
+        </form>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private string? pin;
+    private bool failed;
+
+    private void Unlock() => failed = !Admin.TryUnlock(pin);
+}
