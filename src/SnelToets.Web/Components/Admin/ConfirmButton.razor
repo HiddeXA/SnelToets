@@ -1,0 +1,40 @@
+@* Destructive action with an inline confirmation step (no JS confirm()).
+   <ConfirmButton Label="Verwijderen" ConfirmLabel="Ja, verwijder" OnConfirm="Delete">Optional detail text</ConfirmButton> *@
+
+@if (!asking)
+{
+    <button type="button" class="btn btn-danger @SizeClass" disabled="@Disabled" @onclick="() => asking = true">@Label</button>
+}
+else
+{
+    <span class="confirm @(ChildContent is null ? "" : "has-detail")" role="alertdialog">
+        @if (ChildContent is not null)
+        {
+            <span class="confirm-detail">@ChildContent</span>
+        }
+        <span class="btn-row">
+            <button type="button" class="btn btn-danger confirm-yes @SizeClass" disabled="@busy" @onclick="Confirm">@ConfirmLabel</button>
+            <button type="button" class="btn @SizeClass" disabled="@busy" @onclick="() => asking = false">Annuleren</button>
+        </span>
+    </span>
+}
+
+@code {
+    [Parameter] public string Label { get; set; } = "Verwijderen";
+    [Parameter] public string ConfirmLabel { get; set; } = "Ja, verwijderen";
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool Small { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private bool asking;
+    private bool busy;
+    private string SizeClass => Small ? "btn-sm" : "";
+
+    private async Task Confirm()
+    {
+        busy = true;
+        try { await OnConfirm.InvokeAsync(); }
+        finally { busy = false; asking = false; }
+    }
+}

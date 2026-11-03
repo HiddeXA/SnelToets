@@ -1,0 +1,11 @@
+.tile { display: flex; flex-direction: column; gap: .2rem; text-align: left; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 76px; }
+.tile:disabled { opacity: .6; cursor: progress; }
+.grid > .card + .card { margin-top: 0; }
+.new-subject { padding: .75rem; margin-bottom: 1rem; border-radius: var(--radius-sm); background: var(--surface-2); }
+.color { width: 64px; height: 44px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+.subject-list { list-style: none; margin: 0; padding: 0; }
+.subject-list li + li { border-top: 1px solid var(--border); }
+.subject-list a { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; min-height: 52px; padding: .5rem .25rem; color: inherit; text-decoration: none; }
+.subject-list a:hover .name { color: var(--primary); }
+.swatch { flex: none; width: 14px; height: 14px; border-radius: 4px; }
+.name { font-weight: 600; flex: 1; min-width: 10rem; }

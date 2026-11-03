@@ -1,0 +1,382 @@
+@page "/beheer/import"
+@using SnelToets.Web.Components.Admin
+@using System.Text
+@using System.Text.Json
+@inject IImportService Import
+@inject IContentService Content
+@inject IJSRuntime JS
+
+<PageTitle>Vragen importeren – Beheer</PageTitle>
+
+<AdminGate>
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="/beheer">Beheer</a><span class="sep"></span><span>Importeren</span>
+    </nav>
+    <div class="page-header">
+        <h1>Vragen importeren</h1>
+        <p class="lead">Upload een JSON- of CSV-bestand of plak JSON. Je ziet eerst een voorbeeld; pas na ‘Importeren’ wordt er iets opgeslagen.
+            Bestaande vakken en onderwerpen worden op naam herkend; vragen met hetzelfde <code>id</code> worden bijgewerkt.</p>
+    </div>
+
+    @if (result is not null)
+    {
+        <section class="card result">
+            <h2>Import gelukt</h2>
+            <ul class="counts">
+                <li><strong>@result.SubjectsCreated</strong> nieuwe vakken</li>
+                <li><strong>@result.TopicsCreated</strong> nieuwe onderwerpen</li>
+                <li><strong>@result.QuestionsCreated</strong> nieuwe vragen</li>
+                <li><strong>@result.QuestionsUpdated</strong> bijgewerkte vragen</li>
+                <li><strong>@result.TestsCreated</strong> nieuwe toetsen</li>
+            </ul>
+            @if (result.Warnings.Count > 0)
+            {
+                <div class="alert warn">
+                    <strong>Let op:</strong>
+                    <ul>@foreach (var w in result.Warnings) { <li>@w</li> }</ul>
+                </div>
+            }
+            <div class="btn-row">
+                @foreach (var s in importedSubjects)
+                {
+                    <a class="btn btn-sm" href="@($"/beheer/vak/{s.Id}")">@s.Name</a>
+                }
+                @foreach (var id in result.CreatedTestIds)
+                {
+                    <a class="btn btn-sm" href="@($"/beheer/toets/{id}")">Toets #@id</a>
+                }
+                <a class="btn btn-sm" href="/beheer">Naar beheer</a>
+                <button type="button" class="btn btn-sm btn-primary" @onclick="Reset">Nog een bestand importeren</button>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="card">
+            <div class="tabs" role="tablist">
+                <button type="button" role="tab" aria-selected="@(!pasteMode ? "true" : "false")" class="tab @(!pasteMode ? "on" : "")" @onclick="() => pasteMode = false">Bestand uploaden</button>
+                <button type="button" role="tab" aria-selected="@(pasteMode ? "true" : "false")" class="tab @(pasteMode ? "on" : "")" @onclick="() => pasteMode = true">JSON plakken</button>
+            </div>
+
+            @if (!pasteMode)
+            {
+                <div class="field">
+                    <label for="imp-file">Kies een .json- of .csv-bestand (max. 5 MB)</label>
+                    <InputFile id="imp-file" accept=".json,.csv,application/json,text/csv" OnChange="FileChosen" disabled="@busy" />
+                    @if (fileName is not null) { <span class="hint">Gekozen: @fileName</span> }
+                </div>
+            }
+            else
+            {
+                <div class="field">
+                    <label for="imp-paste">JSON</label>
+                    <textarea id="imp-paste" class="code paste" rows="12" @bind="pasted" placeholder="{ &quot;version&quot;: 1, &quot;subjects&quot;: [ … ] }"></textarea>
+                </div>
+                <button type="button" class="btn btn-primary" disabled="@(busy || string.IsNullOrWhiteSpace(pasted))" @onclick="ParsePasted">Controleren</button>
+            }
+            @if (busy) { <p class="muted mt-1">Bezig…</p> }
+            <ErrorList Errors="errors" />
+        </section>
+
+        @if (preview is not null)
+        {
+            <section class="card">
+                <h2>Voorbeeld</h2>
+                <div class="stats">
+                    <div><strong>@preview.SubjectCount</strong><span>vakken</span></div>
+                    <div><strong>@preview.TopicCount</strong><span>onderwerpen</span></div>
+                    <div><strong>@preview.QuestionCount</strong><span>vragen</span></div>
+                    <div><strong>@preview.TestCount</strong><span>toetsen</span></div>
+                </div>
+
+                @if (preview.Errors.Count > 0)
+                {
+                    <div class="alert bad">
+                        <strong>@preview.Errors.Count fout@(preview.Errors.Count == 1 ? "" : "en") – los deze eerst op:</strong>
+                        <ul class="msg-list">@foreach (var e in preview.Errors.Take(100)) { <li>@e</li> }</ul>
+                        @if (preview.Errors.Count > 100) { <p class="small">… en nog @(preview.Errors.Count - 100) meer.</p> }
+                    </div>
+                }
+                @if (preview.Warnings.Count > 0)
+                {
+                    <div class="alert warn">
+                        <strong>@preview.Warnings.Count waarschuwing@(preview.Warnings.Count == 1 ? "" : "en"):</strong>
+                        <ul class="msg-list">@foreach (var w in preview.Warnings.Take(100)) { <li>@w</li> }</ul>
+                    </div>
+                }
+
+                @if (preview.Document is { } doc)
+                {
+                    <div class="tree">
+                        @foreach (var s in doc.Subjects)
+                        {
+                            <details open="@(doc.Subjects.Count == 1)">
+                                <summary><strong>@s.Name</strong> <span class="muted small">· @s.Topics.Count onderwerpen · @s.Topics.Sum(t => t.Questions.Count) vragen</span></summary>
+                                @foreach (var t in s.Topics)
+                                {
+                                    <details class="lvl2">
+                                        <summary>@t.Name <span class="muted small">· @t.Questions.Count vragen@(string.IsNullOrWhiteSpace(t.Theory) ? "" : " · met theorie")</span></summary>
+                                        <ul class="q-preview">
+                                            @foreach (var q in t.Questions.Take(5))
+                                            {
+                                                <li>
+                                                    <span class="badge primary">@TypeLabel(q.Type)</span>
+                                                    @AdminText.Snippet(q.Prompt, 90)
+                                                    @if (string.IsNullOrWhiteSpace(q.Tip)) { <span class="badge bad">geen tip</span> }
+                                                </li>
+                                            }
+                                            @if (t.Questions.Count > 5) { <li class="muted small">… en nog @(t.Questions.Count - 5) vragen</li> }
+                                        </ul>
+                                    </details>
+                                }
+                            </details>
+                        }
+                        @if (doc.Tests.Count > 0)
+                        {
+                            <details>
+                                <summary><strong>Toetsen</strong> <span class="muted small">· @doc.Tests.Count</span></summary>
+                                <ul class="q-preview">
+                                    @foreach (var t in doc.Tests) { <li>@t.Title <span class="muted small">(@(t.Mode == "practice" ? "oefentoets" : "toets"))</span></li> }
+                                </ul>
+                            </details>
+                        }
+                    </div>
+                }
+
+                <div class="btn-row mt-2">
+                    <button type="button" class="btn btn-primary" disabled="@(!preview.IsValid || busy)" @onclick="DoImport">
+                        Importeren
+                    </button>
+                    <button type="button" class="btn" @onclick="Reset">Annuleren</button>
+                </div>
+            </section>
+        }
+    }
+
+    <section class="card help">
+        <div class="row between">
+            <h2>Formaten</h2>
+            <a class="btn btn-sm btn-ghost" href="/beheer/ai">Laat een AI vragen maken →</a>
+        </div>
+
+        <h3>JSON</h3>
+        <p class="small">Vakken bevatten onderwerpen (met theorie in Markdown), onderwerpen bevatten vragen. <code>type</code> is
+            <code>multiple-choice</code>, <code>multiple-select</code>, <code>true-false</code> of <code>fill-in</code>.
+            Gebruik <code>options</code> met <code>correct</code> voor keuzevragen, <code>answers</code> voor invulvragen en
+            <code>answer: true/false</code> voor goed/fout. Geef elke vraag een vaste <code>id</code>, dan kun je later bijwerken. Optioneel: <code>tests</code>.</p>
+        <pre class="example">@JsonExampleShort</pre>
+
+        <h3>CSV</h3>
+        <p class="small">Eén vraag per regel, eerste regel is de kop. <code>options</code> scheid je met <code>|</code>;
+            <code>correct</code> = de nummers van de juiste opties (1, 2, …) gescheiden door <code>|</code>, of de goede antwoorden bij een invulvraag,
+            of <code>goed</code>/<code>fout</code> bij een goed/fout-vraag. Optionele kolom <code>theory</code> vult de theorie van het onderwerp.
+            Zet tekst met komma’s tussen "aanhalingstekens".</p>
+        <pre class="example">@CsvHeader</pre>
+
+        <div class="btn-row">
+            <button type="button" class="btn btn-sm" @onclick="DownloadJsonExample">Voorbeeld .json downloaden</button>
+            <button type="button" class="btn btn-sm" @onclick="DownloadCsvExample">Voorbeeld .csv downloaden</button>
+        </div>
+    </section>
+</AdminGate>
+
+@code {
+    private const long MaxFileSize = 5 * 1024 * 1024;
+
+    private bool pasteMode, busy;
+    private string? pasted, fileName;
+    private ImportPreview? preview;
+    private ImportResult? result;
+    private List<Subject> importedSubjects = [];
+    private List<string>? errors;
+
+    private const string CsvHeader = "subject,topic,type,prompt,context,options,correct,tip,explanation,difficulty,id,theory";
+
+    private const string JsonExampleShort = """
+        {
+          "version": 1,
+          "subjects": [{
+            "name": "Nederlands 3F",
+            "topics": [{
+              "name": "Werkwoordspelling",
+              "theory": "## Tegenwoordige tijd\nIk-vorm + t bij hij/zij/het.",
+              "questions": [{
+                "id": "ww-001",
+                "type": "multiple-choice",
+                "prompt": "Welke vorm is juist?",
+                "context": "Hij … morgen dertig.",
+                "options": [
+                  { "text": "wordt", "correct": true },
+                  { "text": "word", "feedback": "Bij hij hoort stam + t." }
+                ],
+                "tip": "Hij → stam (word) + t = wordt.",
+                "difficulty": 1
+              }]
+            }]
+          }]
+        }
+        """;
+
+    private static string TypeLabel(string? type) => type switch
+    {
+        QuestionTypeNames.MultipleSelect => AdminText.TypeName(QuestionType.MultipleSelect),
+        QuestionTypeNames.TrueFalse => AdminText.TypeName(QuestionType.TrueFalse),
+        QuestionTypeNames.FillIn => AdminText.TypeName(QuestionType.FillIn),
+        _ => AdminText.TypeName(QuestionType.MultipleChoice)
+    };
+
+    private async Task FileChosen(InputFileChangeEventArgs e)
+    {
+        errors = null;
+        preview = null;
+        var file = e.File;
+        fileName = file.Name;
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (ext is not (".json" or ".csv")) { errors = ["Kies een .json- of .csv-bestand."]; return; }
+        if (file.Size > MaxFileSize) { errors = ["Het bestand is groter dan 5 MB."]; return; }
+
+        busy = true;
+        try
+        {
+            using var ms = new MemoryStream();
+            await using (var stream = file.OpenReadStream(MaxFileSize))
+                await stream.CopyToAsync(ms);
+            ms.Position = 0;
+            preview = await Import.ParseAsync(ms, file.Name);
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private async Task ParsePasted()
+    {
+        errors = null;
+        preview = null;
+        busy = true;
+        try
+        {
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(pasted ?? ""));
+            preview = await Import.ParseAsync(ms, "plak.json");
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private async Task DoImport()
+    {
+        if (preview?.Document is null || !preview.IsValid) return;
+        busy = true;
+        errors = null;
+        try
+        {
+            result = await Import.ImportAsync(preview.Document, ContentSource.Import);
+            var names = preview.Document.Subjects.Select(s => s.Name.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            importedSubjects = (await Content.GetSubjectsAsync()).Where(s => names.Contains(s.Name.Trim())).ToList();
+            preview = null;
+        }
+        catch (ValidationException vex) { errors = vex.Errors.ToList(); }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { busy = false; }
+    }
+
+    private void Reset()
+    {
+        result = null;
+        preview = null;
+        errors = null;
+        pasted = null;
+        fileName = null;
+        importedSubjects = [];
+    }
+
+    private async Task DownloadJsonExample()
+    {
+        var json = JsonSerializer.Serialize(BuildExample(), AdminText.ExportJson);
+        await JS.InvokeVoidAsync("snelToets.download", "sneltoets-voorbeeld.json", "application/json", json);
+    }
+
+    private async Task DownloadCsvExample()
+    {
+        // UTF-8 BOM so Excel shows accents correctly.
+        await JS.InvokeVoidAsync("snelToets.download", "sneltoets-voorbeeld.csv", "text/csv;charset=utf-8", "﻿" + CsvExample);
+    }
+
+    private const string CsvExample = """
+        subject,topic,type,prompt,context,options,correct,tip,explanation,difficulty,id,theory
+        Nederlands 3F,Werkwoordspelling,multiple-choice,Welke vorm is juist?,Hij … morgen dertig.,wordt|word|wort,1,"Hij → stam (word) + t = wordt.",,1,ww-001,"## Tegenwoordige tijd
+        Bij hij/zij/het: stam + t."
+        Nederlands 3F,Werkwoordspelling,multiple-select,Welke zinnen zijn juist gespeld?,,Hij vindt het leuk.|Ik vindt het leuk.|Vind jij het leuk?,1|3,"Ik → alleen de stam (vind); bij inversie (vind jij) valt de t weg.",,2,ww-002,
+        Nederlands 3F,Werkwoordspelling,true-false,‘Gebeurd’ is in ‘Het is gisteren gebeurd.’ juist gespeld.,,,goed,"Voltooid deelwoord: ‘t kofschip’ – gebeuren → gebeurd (met d).",,2,ww-003,
+        Nederlands 3F,Werkwoordspelling,fill-in,Vul de juiste vorm van ‘antwoorden’ in (verleden tijd).,Zij … meteen.,,antwoordde,"Stam antwoord + de (d zit niet in ‘t kofschip’) = antwoordde.",,3,ww-004,
+        """;
+
+    private static ImportDocument BuildExample() => new()
+    {
+        Version = 1,
+        Subjects =
+        [
+            new SubjectDto
+            {
+                Name = "Nederlands 3F",
+                Description = "Taalvaardigheid voor het hbo",
+                Color = "#3056d3",
+                Topics =
+                [
+                    new TopicDto
+                    {
+                        Name = "Werkwoordspelling",
+                        Theory = "## Tegenwoordige tijd\n\nBij **hij/zij/het** schrijf je de stam + t: *hij werkt*, *hij wordt*.\n\n> Bij inversie met *jij/je* valt de t weg: *word jij*.",
+                        Questions =
+                        [
+                            new QuestionDto
+                            {
+                                Id = "ww-001", Type = QuestionTypeNames.MultipleChoice,
+                                Prompt = "Welke vorm is juist?", Context = "Hij … morgen dertig.",
+                                Options =
+                                [
+                                    new OptionDto { Text = "wordt", Correct = true },
+                                    new OptionDto { Text = "word", Feedback = "Bij hij hoort stam + t." },
+                                    new OptionDto { Text = "wort" }
+                                ],
+                                Tip = "Hij → stam (*word*) + t = **wordt**.", Difficulty = 1
+                            },
+                            new QuestionDto
+                            {
+                                Id = "ww-002", Type = QuestionTypeNames.MultipleSelect,
+                                Prompt = "Welke zinnen zijn juist gespeld?",
+                                Options =
+                                [
+                                    new OptionDto { Text = "Hij vindt het leuk.", Correct = true },
+                                    new OptionDto { Text = "Ik vindt het leuk." },
+                                    new OptionDto { Text = "Vind jij het leuk?", Correct = true }
+                                ],
+                                Tip = "Ik → alleen de stam (*vind*); bij inversie (*vind jij*) valt de t weg.", Difficulty = 2
+                            },
+                            new QuestionDto
+                            {
+                                Id = "ww-003", Type = QuestionTypeNames.TrueFalse,
+                                Prompt = "‘Gebeurd’ is in ‘Het is gisteren gebeurd.’ juist gespeld.", Answer = true,
+                                Tip = "Voltooid deelwoord: *gebeuren* → stam *gebeur*, r zit niet in ’t kofschip → **gebeurd**.", Difficulty = 2
+                            },
+                            new QuestionDto
+                            {
+                                Id = "ww-004", Type = QuestionTypeNames.FillIn,
+                                Prompt = "Vul de juiste vorm van ‘antwoorden’ in (verleden tijd).", Context = "Zij … meteen.",
+                                Answers = ["antwoordde"],
+                                Tip = "Stam *antwoord* + **de** (d zit niet in ’t kofschip) = **antwoordde**.", Difficulty = 3
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        Tests =
+        [
+            new TestDto
+            {
+                Title = "Oefentoets werkwoordspelling", Mode = "practice", PassPercentage = 80,
+                RandomQuestionCount = 4, ShuffleQuestions = true, Topics = ["Nederlands 3F/Werkwoordspelling"]
+            }
+        ]
+    };
+}

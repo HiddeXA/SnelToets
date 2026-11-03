@@ -1,0 +1,432 @@
+@page "/beheer/toets/nieuw"
+@page "/beheer/toets/{TestId:int}"
+@using SnelToets.Web.Components.Admin
+@implements IDisposable
+@inject ITestService Tests
+@inject IContentService Content
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@(IsNew ? "Nieuwe toets" : "Toets bewerken") – Beheer</PageTitle>
+
+<AdminGate>
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="/beheer">Beheer</a><span class="sep"></span>
+        <a href="/beheer/toetsen">Toetsen</a><span class="sep"></span>
+        <span>@(IsNew ? "Nieuwe toets" : (title ?? "Toets"))</span>
+    </nav>
+
+    @if (loading)
+    {
+        <p class="muted">Laden…</p>
+    }
+    else if (notFound)
+    {
+        <ErrorList Errors="errors" />
+        <div class="card empty">
+            <p>Deze toets bestaat niet (meer).</p>
+            <a class="btn" href="/beheer/toetsen">Terug naar toetsen</a>
+        </div>
+    }
+    else
+    {
+        <div class="page-header row between">
+            <h1>@(IsNew ? "Nieuwe toets" : "Toets bewerken")</h1>
+            @if (!IsNew) { <a class="btn btn-sm" href="@($"/toets/{TestId}")">Bekijk als student</a> }
+        </div>
+
+        <ErrorList Errors="errors" />
+
+        <form @onsubmit="Save">
+            <section class="card">
+                <h2>Algemeen</h2>
+                <div class="field">
+                    <label for="t-title">Titel</label>
+                    <input id="t-title" type="text" @bind="title" placeholder="Bijv. Proeftoets werkwoordspelling" />
+                </div>
+                <div class="field">
+                    <label for="t-desc">Omschrijving <span class="muted">(optioneel)</span></label>
+                    <textarea id="t-desc" rows="2" @bind="description"></textarea>
+                </div>
+
+                <div class="field">
+                    <span class="label">Soort</span>
+                    <div class="mode-choice">
+                        <label class="mode @(mode == TestMode.Practice ? "on" : "")">
+                            <input type="radio" name="mode" checked="@(mode == TestMode.Practice)" @onchange="() => mode = TestMode.Practice" />
+                            <span><strong>Oefentoets</strong><span class="small muted">Directe feedback en tip na elke vraag.</span></span>
+                        </label>
+                        <label class="mode @(mode == TestMode.Exam ? "on" : "")">
+                            <input type="radio" name="mode" checked="@(mode == TestMode.Exam)" @onchange="() => mode = TestMode.Exam" />
+                            <span><strong>Toets</strong><span class="small muted">Feedback pas na afloop; heen en weer bladeren mag.</span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid cols-2">
+                    <div class="field">
+                        <label for="t-time">Tijdslimiet in minuten <span class="muted">(leeg = geen)</span></label>
+                        <input id="t-time" type="number" min="1" max="600" inputmode="numeric" @bind="timeLimit" />
+                    </div>
+                    <div class="field">
+                        <label for="t-pass">Geslaagd vanaf (%)</label>
+                        <input id="t-pass" type="number" min="1" max="100" inputmode="numeric" @bind="passPercentage" />
+                    </div>
+                </div>
+                <label class="checkbox"><input type="checkbox" @bind="shuffleQuestions" /> Vragen in willekeurige volgorde</label>
+                <label class="checkbox"><input type="checkbox" @bind="shuffleOptions" /> Antwoordopties husselen</label>
+            </section>
+
+            <section class="card">
+                <h2>Vragen uit onderwerpen</h2>
+                <p class="small muted">Kies onderwerpen en eventueel een aantal: elke poging trekt dan willekeurige vragen uit deze onderwerpen.</p>
+                @if (groups.Count == 0)
+                {
+                    <p class="muted">Er zijn nog geen onderwerpen. <a href="/beheer">Maak eerst een vak aan</a>.</p>
+                }
+                @foreach (var g in groups)
+                {
+                    <fieldset class="topic-group">
+                        <legend>@g.Subject.Name</legend>
+                        @foreach (var t in g.Topics)
+                        {
+                            var id = t.Id;
+                            <label class="checkbox topic-check">
+                                <input type="checkbox" checked="@topicIds.Contains(id)" @onchange="e => ToggleTopic(id, e)" />
+                                <span>@t.Name</span>
+                                <span class="badge">@CountFor(id)</span>
+                            </label>
+                        }
+                    </fieldset>
+                }
+                <div class="field mt-1">
+                    <label class="checkbox"><input type="checkbox" @bind="useRandom" /> Trek een willekeurig aantal vragen</label>
+                    @if (useRandom)
+                    {
+                        <input type="number" class="random-count" min="1" max="500" inputmode="numeric" aria-label="Aantal willekeurige vragen" @bind="randomCount" />
+                        <span class="hint">Beschikbaar in gekozen onderwerpen: @AvailableInTopics.</span>
+                    }
+                    else if (topicIds.Count > 0 && fixedQuestions.Count > 0)
+                    {
+                        <span class="hint warn-text">Zonder willekeurig aantal gebruikt de toets alleen de vaste vragen hieronder; de onderwerpen worden dan genegeerd.</span>
+                    }
+                    else if (topicIds.Count > 0)
+                    {
+                        <span class="hint">Zonder aantal komen alle vragen uit de gekozen onderwerpen in de toets.</span>
+                    }
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Vaste vragen</h2>
+                <div class="picker-layout">
+                    <div class="picker">
+                        <div class="row picker-filters">
+                            <select aria-label="Onderwerp om vragen uit te kiezen" @bind="pickTopicId" @bind:after="LoadPickList">
+                                <option value="0">– Kies een onderwerp –</option>
+                                @foreach (var g in groups)
+                                {
+                                    <optgroup label="@g.Subject.Name">
+                                        @foreach (var t in g.Topics) { <option value="@t.Id">@t.Name (@CountFor(t.Id))</option> }
+                                    </optgroup>
+                                }
+                            </select>
+                            <input type="search" placeholder="Zoek…" aria-label="Zoek vragen" @bind="pickSearch" @bind:event="oninput" @bind:after="SearchChanged" />
+                        </div>
+                        @if (pickTopicId == 0)
+                        {
+                            <p class="muted small">Kies een onderwerp om vragen toe te voegen.</p>
+                        }
+                        else if (pickList.Count == 0)
+                        {
+                            <p class="muted small">Geen vragen gevonden.</p>
+                        }
+                        else
+                        {
+                            <div class="row between small">
+                                <span class="muted">@pickList.Count vragen</span>
+                                <button type="button" class="btn btn-sm btn-ghost" @onclick="AddAllVisible">Alle toevoegen</button>
+                            </div>
+                            <ul class="pick-list">
+                                @foreach (var q in pickList)
+                                {
+                                    var question = q;
+                                    <li @key="q.Id">
+                                        <label class="checkbox">
+                                            <input type="checkbox" checked="@IsFixed(q.Id)" @onchange="e => ToggleFixed(question, e)" />
+                                            <span><span class="badge primary">@AdminText.TypeShort(q.Type)</span> @AdminText.Snippet(q.Prompt + (string.IsNullOrWhiteSpace(q.Context) ? "" : " — " + q.Context), 100)</span>
+                                        </label>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+
+                    <div class="selected">
+                        <h3>Gekozen (@fixedQuestions.Count)</h3>
+                        @if (fixedQuestions.Count == 0)
+                        {
+                            <p class="muted small">Nog geen vaste vragen.</p>
+                        }
+                        else
+                        {
+                            <ol class="sel-list">
+                                @for (var i = 0; i < fixedQuestions.Count; i++)
+                                {
+                                    var index = i;
+                                    var q = fixedQuestions[i];
+                                    <li @key="q.Id">
+                                        <span class="sel-text">
+                                            @AdminText.Snippet(q.Prompt, 80)
+                                            <span class="muted small">· @TopicName(q.TopicId)</span>
+                                        </span>
+                                        <span class="sel-tools">
+                                            <button type="button" class="btn btn-sm btn-ghost icon" aria-label="Omhoog" title="Omhoog" disabled="@(index == 0)" @onclick="() => MoveFixed(index, -1)">▲</button>
+                                            <button type="button" class="btn btn-sm btn-ghost icon" aria-label="Omlaag" title="Omlaag" disabled="@(index == fixedQuestions.Count - 1)" @onclick="() => MoveFixed(index, 1)">▼</button>
+                                            <button type="button" class="btn btn-sm btn-ghost icon remove" aria-label="Verwijderen" title="Verwijderen" @onclick="() => fixedQuestions.RemoveAt(index)">✕</button>
+                                        </span>
+                                    </li>
+                                }
+                            </ol>
+                            <button type="button" class="btn btn-sm btn-ghost" @onclick="() => fixedQuestions.Clear()">Alles wissen</button>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <div class="card save-bar">
+                <div class="total">
+                    <strong>@ResultCount</strong> vra@(ResultCount == 1 ? "ag" : "gen") per poging
+                    @if (savedCount is int sc && sc != ResultCount) { <span class="small muted">(opgeslagen versie: @sc)</span> }
+                </div>
+                <div class="btn-row">
+                    <a class="btn btn-ghost" href="/beheer/toetsen">Annuleren</a>
+                    <button type="submit" class="btn btn-primary" disabled="@saving">Opslaan</button>
+                </div>
+            </div>
+        </form>
+
+        @if (!IsNew)
+        {
+            <section class="card danger-zone mt-2">
+                <ConfirmButton Label="Toets verwijderen" ConfirmLabel="Ja, verwijder toets" OnConfirm="Delete">
+                    De toets <strong>@title</strong> wordt verwijderd. De vragen zelf blijven bestaan.
+                </ConfirmButton>
+            </section>
+        }
+    }
+</AdminGate>
+
+@code {
+    [Parameter] public int? TestId { get; set; }
+
+    private record TopicGroup(Subject Subject, List<Topic> Topics);
+
+    private bool IsNew => TestId is null;
+    private bool loading = true, notFound, saving;
+    private List<string>? errors;
+
+    private List<TopicGroup> groups = [];
+    private Dictionary<int, int> topicCounts = [];
+    private Dictionary<int, string> topicNames = [];
+
+    private string? title, description;
+    private TestMode mode = TestMode.Exam;
+    private int? timeLimit;
+    private int passPercentage = 80;
+    private bool shuffleQuestions = true, shuffleOptions = true;
+    private ContentSource source = ContentSource.Manual;
+    private DateTime createdAt = DateTime.UtcNow;
+    private readonly HashSet<int> topicIds = [];
+    private bool useRandom;
+    private int? randomCount = 20;
+    private List<Question> fixedQuestions = [];
+    private int? savedCount;
+
+    private int pickTopicId;
+    private string? pickSearch;
+    private List<Question> pickList = [];
+    private CancellationTokenSource? searchCts;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        notFound = false;
+        try
+        {
+            await LoadTopics();
+            if (!IsNew)
+            {
+                var test = await Tests.GetTestAsync(TestId!.Value);
+                if (test is null) { notFound = true; loading = false; return; }
+                title = test.Title;
+                description = test.Description;
+                mode = test.Mode;
+                timeLimit = test.TimeLimitMinutes;
+                passPercentage = test.PassPercentage;
+                shuffleQuestions = test.ShuffleQuestions;
+                shuffleOptions = test.ShuffleOptions;
+                source = test.Source;
+                createdAt = test.CreatedAt;
+                useRandom = test.RandomQuestionCount is not null;
+                randomCount = test.RandomQuestionCount ?? 20;
+                topicIds.Clear();
+                foreach (var t in test.Topics) topicIds.Add(t.TopicId);
+                fixedQuestions = [];
+                foreach (var tq in test.Questions.OrderBy(q => q.SortOrder))
+                {
+                    var q = tq.Question ?? await Content.GetQuestionAsync(tq.QuestionId);
+                    if (q is not null) fixedQuestions.Add(q);
+                }
+                savedCount = await Tests.CountQuestionsAsync(test.Id);
+                pickTopicId = test.Topics.FirstOrDefault()?.TopicId ?? fixedQuestions.FirstOrDefault()?.TopicId ?? 0;
+                if (pickTopicId != 0) await LoadPickList();
+            }
+        }
+        catch (Exception ex)
+        {
+            errors = [AdminText.ErrorMessage(ex)];
+            notFound = !IsNew;
+        }
+        loading = false;
+    }
+
+    private async Task LoadTopics()
+    {
+        var list = new List<TopicGroup>();
+        var counts = new Dictionary<int, int>();
+        foreach (var s in (await Content.GetSubjectsAsync()).OrderBy(s => s.Name))
+        {
+            var topics = (await Content.GetTopicsAsync(s.Id)).OrderBy(t => t.SortOrder).ThenBy(t => t.Id).ToList();
+            list.Add(new TopicGroup(s, topics));
+            foreach (var (k, v) in await Content.CountQuestionsPerTopicAsync(s.Id)) counts[k] = v;
+        }
+        groups = list;
+        topicCounts = counts;
+        topicNames = list.SelectMany(g => g.Topics.Select(t => (t.Id, Name: $"{g.Subject.Name} › {t.Name}"))).ToDictionary(x => x.Id, x => x.Name);
+    }
+
+    private int CountFor(int topicId) => topicCounts.TryGetValue(topicId, out var n) ? n : 0;
+    private string TopicName(int topicId) => topicNames.TryGetValue(topicId, out var n) ? n : "";
+    private int AvailableInTopics => topicIds.Sum(CountFor);
+    private bool IsFixed(int questionId) => fixedQuestions.Any(q => q.Id == questionId);
+
+    /// <summary>Local estimate following the Test.RandomQuestionCount rules.</summary>
+    private int ResultCount
+    {
+        get
+        {
+            if (useRandom && randomCount is int n && n > 0)
+            {
+                var fixedIds = fixedQuestions.Select(q => q.Id).ToHashSet();
+                var fixedInTopics = fixedQuestions.Count(q => topicIds.Contains(q.TopicId));
+                return fixedIds.Count + Math.Min(n, Math.Max(0, AvailableInTopics - fixedInTopics));
+            }
+            return fixedQuestions.Count > 0 ? fixedQuestions.Count : AvailableInTopics;
+        }
+    }
+
+    private void ToggleTopic(int id, ChangeEventArgs e)
+    {
+        if (e.Value is true) topicIds.Add(id); else topicIds.Remove(id);
+    }
+
+    private void ToggleFixed(Question q, ChangeEventArgs e)
+    {
+        if (e.Value is true) { if (!IsFixed(q.Id)) fixedQuestions.Add(q); }
+        else fixedQuestions.RemoveAll(x => x.Id == q.Id);
+    }
+
+    private void AddAllVisible()
+    {
+        foreach (var q in pickList)
+            if (!IsFixed(q.Id)) fixedQuestions.Add(q);
+    }
+
+    private void MoveFixed(int index, int delta)
+    {
+        var target = index + delta;
+        if (target < 0 || target >= fixedQuestions.Count) return;
+        (fixedQuestions[index], fixedQuestions[target]) = (fixedQuestions[target], fixedQuestions[index]);
+    }
+
+    private async Task LoadPickList()
+    {
+        if (pickTopicId == 0) { pickList = []; return; }
+        try
+        {
+            pickList = await Content.GetQuestionsAsync(pickTopicId, string.IsNullOrWhiteSpace(pickSearch) ? null : pickSearch.Trim(), 0, 500);
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+    }
+
+    private async Task SearchChanged()
+    {
+        searchCts?.Cancel();
+        searchCts = new CancellationTokenSource();
+        var token = searchCts.Token;
+        try { await Task.Delay(250, token); }
+        catch (TaskCanceledException) { return; }
+        await LoadPickList();
+    }
+
+    private async Task Save()
+    {
+        var local = new List<string>();
+        if (string.IsNullOrWhiteSpace(title)) local.Add("Geef de toets een titel.");
+        if (topicIds.Count == 0 && fixedQuestions.Count == 0) local.Add("Kies minimaal één onderwerp of vaste vraag.");
+        if (useRandom && (randomCount is null or < 1)) local.Add("Vul een aantal willekeurige vragen in (minimaal 1).");
+        if (useRandom && topicIds.Count == 0) local.Add("Kies onderwerpen om willekeurige vragen uit te trekken.");
+        if (passPercentage is < 1 or > 100) local.Add("Het slagingspercentage ligt tussen 1 en 100.");
+        if (timeLimit is < 1) local.Add("De tijdslimiet is minimaal 1 minuut (of laat het veld leeg).");
+        if (local.Count > 0)
+        {
+            errors = local;
+            await JS.InvokeVoidAsync("snelToets.scrollTop");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var test = new Test
+            {
+                Id = TestId ?? 0,
+                Title = title!.Trim(),
+                Description = QuestionDraft.Clean(description),
+                Mode = mode,
+                TimeLimitMinutes = timeLimit,
+                PassPercentage = passPercentage,
+                ShuffleQuestions = shuffleQuestions,
+                ShuffleOptions = shuffleOptions,
+                RandomQuestionCount = useRandom ? randomCount : null,
+                Source = source,
+                CreatedAt = createdAt,
+                Questions = fixedQuestions.Select((q, i) => new TestQuestion { TestId = TestId ?? 0, QuestionId = q.Id, SortOrder = i }).ToList(),
+                Topics = topicIds.Select(id => new TestTopic { TestId = TestId ?? 0, TopicId = id }).ToList()
+            };
+            if (IsNew) await Tests.CreateTestAsync(test);
+            else await Tests.UpdateTestAsync(test);
+            Nav.NavigateTo("/beheer/toetsen");
+        }
+        catch (ValidationException vex)
+        {
+            errors = vex.Errors.ToList();
+            await JS.InvokeVoidAsync("snelToets.scrollTop");
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+        finally { saving = false; }
+    }
+
+    private async Task Delete()
+    {
+        try
+        {
+            await Tests.DeleteTestAsync(TestId!.Value);
+            Nav.NavigateTo("/beheer/toetsen");
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+    }
+
+    public void Dispose() => searchCts?.Cancel();
+}

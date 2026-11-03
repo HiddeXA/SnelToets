@@ -1,0 +1,17 @@
+.tabs { display: flex; gap: .25rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.tab { min-height: 44px; padding: .4rem .9rem; font: inherit; font-weight: 600; color: var(--text-2); background: none; border: 0; border-bottom: 3px solid transparent; cursor: pointer; }
+.tab.on { color: var(--primary); border-bottom-color: var(--primary); }
+.paste { min-height: 220px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-bottom: 1rem; }
+.stats div { display: flex; flex-direction: column; align-items: center; padding: .5rem .25rem; border-radius: var(--radius-sm); background: var(--surface-2); }
+.stats strong { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.stats span { font-size: .75rem; color: var(--text-2); }
+.msg-list { margin: .25rem 0 0; padding-left: 1.2rem; font-size: .9rem; max-height: 260px; overflow-y: auto; }
+.tree details { padding: .3rem 0; border-bottom: 1px solid var(--border); }
+.tree summary { cursor: pointer; min-height: 36px; display: list-item; padding: .3rem 0; }
+.tree .lvl2 { margin-left: 1rem; border-bottom: 0; }
+.q-preview { margin: .2rem 0 .4rem; padding-left: 1.2rem; font-size: .9rem; }
+.q-preview li { margin-bottom: .25rem; }
+.counts { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
+.help h3 { margin-top: 1rem; }
+.example { font-size: .78rem; line-height: 1.45; white-space: pre; max-height: 340px; }

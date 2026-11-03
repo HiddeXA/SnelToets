@@ -1,0 +1,16 @@
+.page-header h1 { margin: 0; }
+.q-list { list-style: none; margin: 0; padding: 0; }
+.q-list li { display: flex; flex-direction: column; gap: .4rem; padding: .65rem 0; border-bottom: 1px solid var(--border); }
+.q-main { display: flex; flex-direction: column; gap: .3rem; color: inherit; text-decoration: none; min-width: 0; }
+.q-main:hover .q-prompt { color: var(--primary); }
+.q-prompt { font-weight: 500; overflow-wrap: anywhere; }
+.q-meta { display: flex; flex-wrap: wrap; gap: .3rem; }
+.q-actions { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+@media (min-width: 768px) {
+    .q-list li { flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; }
+    .q-main { flex: 1; }
+    .q-actions { flex: none; justify-content: flex-end; }
+}
+.theory { min-height: 260px; }
+.theory-preview { min-height: 260px; padding: .75rem 1rem; border: 1px dashed var(--border); border-radius: var(--radius-sm); }
+.danger-zone h2 { color: var(--bad); }

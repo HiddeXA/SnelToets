@@ -1,0 +1,363 @@
+@page "/beheer/vraag/nieuw"
+@page "/beheer/vraag/{QuestionId:int}"
+@using SnelToets.Web.Components.Admin
+@inject IContentService Content
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@(IsNew ? "Nieuwe vraag" : "Vraag bewerken") – Beheer</PageTitle>
+
+<AdminGate>
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="/beheer">Beheer</a><span class="sep"></span>
+        @if (CurrentTopic is { } ct)
+        {
+            <a href="@($"/beheer/vak/{ct.Subject.Id}")">@ct.Subject.Name</a><span class="sep"></span>
+            <a href="@($"/beheer/onderwerp/{ct.Topic.Id}")">@ct.Topic.Name</a><span class="sep"></span>
+        }
+        <span>@(IsNew ? "Nieuwe vraag" : "Vraag bewerken")</span>
+    </nav>
+
+    @if (loading)
+    {
+        <p class="muted">Laden…</p>
+    }
+    else if (draft is null)
+    {
+        <ErrorList Errors="errors" />
+        <div class="card empty">
+            <p>@(errors is null ? "Deze vraag bestaat niet (meer)." : "Kon de gegevens niet laden.")</p>
+            <a class="btn" href="/beheer">Terug naar beheer</a>
+        </div>
+    }
+    else
+    {
+        <div class="page-header row between">
+            <h1>@(IsNew ? "Nieuwe vraag" : "Vraag bewerken")</h1>
+            @if (!IsNew) { <SourceBadge Source="draft.Source" /> }
+        </div>
+
+        @if (savedMessage is not null) { <div class="alert good" role="status">@savedMessage</div> }
+        <ErrorList Errors="errors" />
+
+        <div class="editor-layout">
+            <form class="card editor" @onsubmit="() => Save(false)">
+                <div class="field">
+                    <span class="label">Soort vraag</span>
+                    <div class="segmented" role="radiogroup" aria-label="Soort vraag">
+                        @foreach (var type in AdminText.QuestionTypes)
+                        {
+                            <button type="button" role="radio" aria-checked="@(draft.Type == type ? "true" : "false")"
+                                    class="seg @(draft.Type == type ? "on" : "")" @onclick="() => draft.ChangeType(type)">
+                                @AdminText.TypeName(type)
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="q-topic">Onderwerp</label>
+                    <select id="q-topic" @bind="draft.TopicId">
+                        @if (draft.TopicId == 0) { <option value="0">– Kies een onderwerp –</option> }
+                        @foreach (var group in topicGroups)
+                        {
+                            <optgroup label="@group.Subject.Name">
+                                @foreach (var t in group.Topics)
+                                {
+                                    <option value="@t.Id">@t.Name</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                    @if (!IsNew && originalTopicId != draft.TopicId && draft.TopicId != 0)
+                    {
+                        <span class="hint">De vraag wordt bij opslaan verplaatst naar dit onderwerp.</span>
+                    }
+                </div>
+
+                <div class="field">
+                    <label for="q-prompt">Vraag</label>
+                    <textarea id="q-prompt" rows="2" @bind="draft.Prompt" @bind:event="oninput"
+                              placeholder="@PromptPlaceholder"></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="q-context">Context <span class="muted">(optioneel)</span></label>
+                    <textarea id="q-context" rows="2" @bind="draft.Context" @bind:event="oninput"
+                              placeholder="Bijv. de zin met een gat: Hij … elke dag naar school."></textarea>
+                    <span class="hint">Wordt boven de vraag in een grijs kader getoond. Markdown mag.</span>
+                </div>
+
+                @if (draft.UsesOptions)
+                {
+                    <fieldset class="field options-edit">
+                        <legend class="label">
+                            Antwoordopties
+                            <span class="hint">@(draft.Type == QuestionType.MultipleSelect ? "Vink alle juiste antwoorden aan." : "Kies het juiste antwoord.")</span>
+                        </legend>
+                        @for (var i = 0; i < draft.Options.Count; i++)
+                        {
+                            var index = i;
+                            var o = draft.Options[i];
+                            var fixedOptions = draft.Type == QuestionType.TrueFalse;
+                            <div class="opt @(o.IsCorrect ? "is-correct" : "")" @key="o">
+                                <div class="opt-row">
+                                    <label class="opt-correct" title="Juist antwoord">
+                                        @if (draft.Type == QuestionType.MultipleSelect)
+                                        {
+                                            <input type="checkbox" @bind="o.IsCorrect" aria-label="@($"Optie {(char)('A' + index)} is juist")" />
+                                        }
+                                        else
+                                        {
+                                            <input type="radio" name="correct-option" checked="@o.IsCorrect"
+                                                   @onchange="() => draft.SetSingleCorrect(o)" aria-label="@($"Optie {(char)('A' + index)} is juist")" />
+                                        }
+                                        <span class="key">@((char)('A' + index))</span>
+                                    </label>
+                                    <input type="text" class="opt-text" @bind="o.Text" @bind:event="oninput"
+                                           placeholder="@($"Optie {(char)('A' + index)}")" aria-label="@($"Tekst optie {(char)('A' + index)}")" />
+                                    @if (!fixedOptions)
+                                    {
+                                        <span class="opt-tools">
+                                            <button type="button" class="btn btn-sm btn-ghost icon" title="Omhoog" aria-label="Omhoog" disabled="@(index == 0)" @onclick="() => MoveOption(index, -1)">▲</button>
+                                            <button type="button" class="btn btn-sm btn-ghost icon" title="Omlaag" aria-label="Omlaag" disabled="@(index == draft.Options.Count - 1)" @onclick="() => MoveOption(index, 1)">▼</button>
+                                            <button type="button" class="btn btn-sm btn-ghost icon remove" title="Verwijderen" aria-label="Optie verwijderen" disabled="@(draft.Options.Count <= 2)" @onclick="() => draft.Options.RemoveAt(index)">✕</button>
+                                        </span>
+                                    }
+                                </div>
+                                @if (o.ShowFeedback)
+                                {
+                                    <textarea class="opt-feedback" rows="2" @bind="o.Feedback" @bind:event="oninput"
+                                              placeholder="Feedback bij deze keuze, bijv. waarom dit fout is" aria-label="Feedback bij deze optie"></textarea>
+                                }
+                                <button type="button" class="link-btn" @onclick="() => o.ShowFeedback = !o.ShowFeedback">
+                                    @(o.ShowFeedback ? "Feedback verbergen" : string.IsNullOrWhiteSpace(o.Feedback) ? "+ Feedback bij deze optie" : "Feedback tonen ✓")
+                                </button>
+                            </div>
+                        }
+                        @if (draft.Type != QuestionType.TrueFalse)
+                        {
+                            <button type="button" class="btn btn-sm" @onclick="AddOption">+ Optie toevoegen</button>
+                        }
+                    </fieldset>
+                }
+                else
+                {
+                    <fieldset class="field options-edit">
+                        <legend class="label">
+                            Goede antwoorden
+                            <span class="hint">Voeg alle schrijfwijzen toe die goed gerekend moeten worden.</span>
+                        </legend>
+                        @for (var i = 0; i < draft.Answers.Count; i++)
+                        {
+                            var index = i;
+                            var a = draft.Answers[i];
+                            <div class="opt-row" @key="a">
+                                <input type="text" class="opt-text" @bind="a.Text" @bind:event="oninput" placeholder="Goed antwoord" aria-label="@($"Goed antwoord {index + 1}")" />
+                                <button type="button" class="btn btn-sm btn-ghost icon remove" title="Verwijderen" aria-label="Antwoord verwijderen" disabled="@(draft.Answers.Count <= 1)" @onclick="() => draft.Answers.RemoveAt(index)">✕</button>
+                            </div>
+                        }
+                        <button type="button" class="btn btn-sm" @onclick="() => draft.Answers.Add(new AnswerDraft())">+ Antwoord toevoegen</button>
+                    </fieldset>
+                }
+
+                <div class="field">
+                    <label for="q-tip">Tip</label>
+                    <textarea id="q-tip" rows="3" @bind="draft.Tip" @bind:event="oninput"
+                              placeholder="Bijv. Stam + t: ‘hij werkt’. Bij ‘hij … (worden)’ is het dus ‘wordt’."></textarea>
+                    <span class="hint">Leg de regel uit en pas hem toe op deze vraag – dit ziet de student na een fout antwoord.</span>
+                </div>
+
+                <div class="field">
+                    <label for="q-expl">Uitleg <span class="muted">(optioneel)</span></label>
+                    <textarea id="q-expl" rows="2" @bind="draft.Explanation" @bind:event="oninput"></textarea>
+                    <span class="hint">Extra uitleg die ook na een goed antwoord wordt getoond.</span>
+                </div>
+
+                <div class="field">
+                    <span class="label">Moeilijkheid</span>
+                    <div class="segmented" role="radiogroup" aria-label="Moeilijkheid">
+                        @for (var d = 1; d <= 3; d++)
+                        {
+                            var level = d;
+                            <button type="button" role="radio" aria-checked="@(draft.Difficulty == level ? "true" : "false")"
+                                    class="seg @(draft.Difficulty == level ? "on" : "")" @onclick="() => draft.Difficulty = level">
+                                @level · @AdminText.DifficultyName(level)
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary" disabled="@saving">Opslaan</button>
+                    <button type="button" class="btn" disabled="@saving" @onclick="() => Save(true)">Opslaan en nieuwe</button>
+                    <a class="btn btn-ghost" href="@BackUrl">Annuleren</a>
+                    @if (!IsNew)
+                    {
+                        <span class="spacer"></span>
+                        <ConfirmButton Label="Verwijderen" ConfirmLabel="Ja, verwijder vraag" OnConfirm="Delete" />
+                    }
+                </div>
+            </form>
+
+            <aside class="preview-col">
+                <div class="card preview-card">
+                    <div class="row between mb-1">
+                        <h2 class="small-h">Zo ziet de student het</h2>
+                        <span class="badge">@AdminText.TypeName(draft.Type)</span>
+                    </div>
+                    <QuestionPreview Question="draft.ToQuestion()" />
+                </div>
+            </aside>
+        </div>
+    }
+</AdminGate>
+
+@code {
+    [Parameter] public int? QuestionId { get; set; }
+    [SupplyParameterFromQuery(Name = "topic")] public int? TopicParam { get; set; }
+
+    private record TopicGroup(Subject Subject, List<Topic> Topics);
+
+    private QuestionDraft? draft;
+    private List<TopicGroup> topicGroups = [];
+    private int originalTopicId;
+    private bool loading = true, saving;
+    private List<string>? errors;
+    private string? savedMessage;
+
+    private bool IsNew => QuestionId is null;
+
+    private (Subject Subject, Topic Topic)? CurrentTopic
+    {
+        get
+        {
+            var id = draft is null ? 0 : (IsNew ? draft.TopicId : originalTopicId);
+            foreach (var g in topicGroups)
+                foreach (var t in g.Topics)
+                    if (t.Id == id) return (g.Subject, t);
+            return null;
+        }
+    }
+
+    private string BackUrl => draft is { TopicId: > 0 } d ? $"/beheer/onderwerp/{(IsNew ? d.TopicId : originalTopicId)}" : "/beheer";
+
+    private string PromptPlaceholder => draft?.Type switch
+    {
+        QuestionType.TrueFalse => "Bijv. ‘Hij wordt morgen dertig.’ is goed gespeld.",
+        QuestionType.FillIn => "Bijv. Vul de juiste vorm van ‘worden’ in.",
+        QuestionType.MultipleSelect => "Bijv. Welke zinnen zijn juist gespeld?",
+        _ => "Bijv. Welke werkwoordsvorm is juist gespeld?"
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        errors = null;
+        try
+        {
+            if (topicGroups.Count == 0) await LoadTopics();
+
+            if (IsNew)
+            {
+                var topicId = TopicParam is int t && topicGroups.Any(g => g.Topics.Any(x => x.Id == t)) ? t : 0;
+                // Keep the chosen type when coming from "Opslaan en nieuwe".
+                draft = QuestionDraft.New(topicId, draft?.Id == 0 ? draft.Type : QuestionType.MultipleChoice);
+                originalTopicId = topicId;
+            }
+            else
+            {
+                var q = await Content.GetQuestionAsync(QuestionId!.Value);
+                draft = q is null ? null : QuestionDraft.From(q);
+                originalTopicId = q?.TopicId ?? 0;
+                savedMessage = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            errors = [AdminText.ErrorMessage(ex)];
+        }
+        loading = false;
+    }
+
+    private async Task LoadTopics()
+    {
+        var groups = new List<TopicGroup>();
+        foreach (var s in (await Content.GetSubjectsAsync()).OrderBy(s => s.Name))
+        {
+            var topics = (await Content.GetTopicsAsync(s.Id)).OrderBy(t => t.SortOrder).ThenBy(t => t.Id).ToList();
+            groups.Add(new TopicGroup(s, topics));
+        }
+        topicGroups = groups;
+    }
+
+    private void AddOption() => draft!.Options.Add(new OptionDraft());
+
+    private void MoveOption(int index, int delta)
+    {
+        var target = index + delta;
+        if (target < 0 || target >= draft!.Options.Count) return;
+        (draft.Options[index], draft.Options[target]) = (draft.Options[target], draft.Options[index]);
+    }
+
+    private async Task Save(bool andNew)
+    {
+        if (draft is null || saving) return;
+        savedMessage = null;
+        var local = draft.LocalErrors();
+        if (local.Count > 0)
+        {
+            errors = local;
+            await JS.InvokeVoidAsync("snelToets.scrollTop");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var question = draft.ToQuestion();
+            if (IsNew) await Content.CreateQuestionAsync(question);
+            else await Content.UpdateQuestionAsync(question);
+            errors = null;
+
+            if (!andNew)
+            {
+                Nav.NavigateTo($"/beheer/onderwerp/{draft.TopicId}");
+            }
+            else if (IsNew)
+            {
+                // Fast entry: keep type, topic and difficulty, clear the rest.
+                var next = QuestionDraft.New(draft.TopicId, draft.Type);
+                next.Difficulty = draft.Difficulty;
+                draft = next;
+                savedMessage = "Vraag opgeslagen. Vul de volgende in.";
+                await JS.InvokeVoidAsync("snelToets.scrollTop");
+                await JS.InvokeVoidAsync("snelToets.focus", "#q-prompt");
+            }
+            else
+            {
+                Nav.NavigateTo($"/beheer/vraag/nieuw?topic={draft.TopicId}");
+            }
+        }
+        catch (ValidationException vex)
+        {
+            errors = vex.Errors.ToList();
+            await JS.InvokeVoidAsync("snelToets.scrollTop");
+        }
+        catch (Exception ex)
+        {
+            errors = [AdminText.ErrorMessage(ex)];
+        }
+        finally { saving = false; }
+    }
+
+    private async Task Delete()
+    {
+        try
+        {
+            await Content.DeleteQuestionAsync(QuestionId!.Value);
+            Nav.NavigateTo($"/beheer/onderwerp/{originalTopicId}");
+        }
+        catch (Exception ex) { errors = [AdminText.ErrorMessage(ex)]; }
+    }
+}
