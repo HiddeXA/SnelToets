@@ -1,0 +1,26 @@
+.subject-header h1 { display: flex; align-items: center; gap: .6rem; }
+.subject-header h1::before { content: ""; width: 6px; align-self: stretch; border-radius: 3px; background: var(--accent); }
+.section-title { font-size: 1rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); margin: 0; }
+
+.placement-card { display: flex; gap: 1rem; align-items: flex-start; border: 2px solid var(--primary); background: linear-gradient(135deg, var(--primary-soft), var(--surface) 70%); margin-bottom: 1rem; }
+.placement-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--primary); flex: none; }
+.placement-icon svg { width: 26px; height: 26px; fill: #fff; }
+.placement-text h2 { margin-bottom: .25rem; }
+.placement-text .btn { margin-top: .25rem; }
+
+.advice-box { margin-top: 0; }
+.advice-box p { margin-bottom: .5rem; }
+.advice-box p:last-child { margin-bottom: 0; }
+
+.topic-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+@media (min-width: 640px) { .topic-list { grid-template-columns: 1fr 1fr; } }
+.topic-row { display: flex; flex-direction: column; gap: .45rem; height: 100%; }
+.topic-row.recommended { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) inset, var(--shadow); }
+.topic-row.empty-topic { opacity: .7; }
+.topic-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
+.topic-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.mix-card { display: flex; flex-direction: column; gap: .5rem; }
+.mix-card h2 { margin-bottom: .2rem; }
+.mix-card p { margin: 0; }
+@media (min-width: 640px) { .mix-card { flex-direction: row; align-items: center; justify-content: space-between; } }

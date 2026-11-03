@@ -1,0 +1,191 @@
+@page "/vak/{SubjectId:int}"
+@inject IContentService Content
+@inject IPracticeService Practice
+@inject LearnerSession Learner
+@inject NavigationManager Nav
+
+<PageTitle>@(subject?.Name ?? "Vak") – SnelToets</PageTitle>
+
+@if (loading)
+{
+    <p class="muted">Laden…</p>
+}
+else if (subject is null)
+{
+    <div class="card empty">
+        <h1>Vak niet gevonden</h1>
+        <p>@(error ?? "Dit vak bestaat niet (meer).")</p>
+        <a class="btn btn-primary" href="">Naar het overzicht</a>
+    </div>
+}
+else
+{
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="">Oefenen</a><span class="sep"></span><span>@subject.Name</span>
+    </nav>
+    <header class="page-header subject-header" style="--accent:@(subject.Color ?? "var(--primary)")">
+        <h1>@subject.Name</h1>
+        @if (!string.IsNullOrWhiteSpace(subject.Description))
+        {
+            <p class="lead">@subject.Description</p>
+        }
+    </header>
+
+    @if (actionError is not null)
+    {
+        <div class="alert bad" role="alert">@actionError</div>
+    }
+
+    @if (advice is null)
+    {
+        <div class="alert warn">@(error ?? "Je studieadvies kon niet worden geladen.")</div>
+    }
+    else if (totalQuestions == 0)
+    {
+        <div class="card empty">
+            <h2>Nog geen vragen</h2>
+            <p>Voor dit vak zijn nog geen oefenvragen. Vraag je docent om vragen toe te voegen.</p>
+            <a class="btn" href="beheer">Vragen toevoegen of importeren</a>
+        </div>
+    }
+    else
+    {
+        @if (!advice.PlacementDone)
+        {
+            <section class="card placement-card">
+                <div class="placement-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" /></svg>
+                </div>
+                <div class="placement-text">
+                    <h2>Begin met de starttoets</h2>
+                    <p class="muted">Een paar vragen per onderwerp. Daarna weet je waar je staat en krijg je een persoonlijk studieadvies.</p>
+                    <button type="button" class="btn btn-primary" @onclick="StartPlacement" disabled="@busy">
+                        @(busy ? "Starttoets klaarzetten…" : "Starttoets maken")
+                    </button>
+                </div>
+            </section>
+        }
+
+        <section class="feedback info advice-box" aria-label="Studieadvies">
+            <div class="feedback-title">Studieadvies</div>
+            <p>@advice.Message</p>
+            @if (advice.PlacementDone && recommended is not null)
+            {
+                <a class="btn btn-primary btn-sm" href="onderwerp/@recommended.TopicId">Ga naar @recommended.Name</a>
+            }
+        </section>
+
+        <section class="mt-2" aria-labelledby="topics-title">
+            <div class="row between mb-1">
+                <h2 id="topics-title" class="section-title">Onderwerpen</h2>
+                <span class="small muted">@masteredCount van @playable beheerst</span>
+            </div>
+            <ul class="topic-list">
+                @foreach (var t in advice.Topics)
+                {
+                    var isRecommended = t.TopicId == advice.RecommendedTopicId;
+                    <li>
+                        <a class="card card-link topic-row @(isRecommended ? "recommended" : "") @(t.QuestionCount == 0 ? "empty-topic" : "")" href="onderwerp/@t.TopicId">
+                            <div class="topic-head">
+                                <span class="topic-name">@t.Name</span>
+                                <MasteryIcon Mastered="t.Mastered" NeedsAttention="t.NeedsAttention" />
+                                @if (isRecommended)
+                                {
+                                    <span class="badge primary">Aanbevolen</span>
+                                }
+                                <span class="spacer"></span>
+                                <span class="score-label">@(t.QuestionCount == 0 ? "" : LearnUi.Pct(t.Mastery))</span>
+                            </div>
+                            @if (t.QuestionCount == 0)
+                            {
+                                <span class="small muted">Nog geen vragen</span>
+                            }
+                            else
+                            {
+                                <ScoreBar Value="t.Mastery" ShowValue="false" Compact="true" />
+                                <span class="small muted">@LearnUi.QuestionWord(t.QuestionCount)@(t.Answered > 0 ? $" · {t.Answered} keer geoefend" : "")</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section class="card mt-2 mix-card">
+            <div>
+                <h2>Mixoefening</h2>
+                <p class="muted small">15 vragen door elkaar uit alle onderwerpen, met de nadruk op wat je nog lastig vindt.</p>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn btn-primary" @onclick="StartMix" disabled="@busy">Start mixoefening</button>
+                <a class="btn" href="toetsen">Oefentoetsen</a>
+            </div>
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public int SubjectId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private string? error;
+    private string? actionError;
+    private Subject? subject;
+    private StudyAdvice? advice;
+    private TopicAdvice? recommended;
+    private int totalQuestions;
+    private int playable;
+    private int masteredCount;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        error = actionError = null;
+        subject = null;
+        advice = null;
+        try
+        {
+            subject = await Content.GetSubjectAsync(SubjectId);
+            if (subject is not null)
+            {
+                advice = await Practice.GetAdviceAsync(Learner.Id, SubjectId);
+                recommended = advice.Topics.FirstOrDefault(t => t.TopicId == advice.RecommendedTopicId);
+                totalQuestions = advice.Topics.Sum(t => t.QuestionCount);
+                playable = advice.Topics.Count(t => t.QuestionCount > 0);
+                masteredCount = advice.Topics.Count(t => t.QuestionCount > 0 && t.Mastered);
+            }
+        }
+        catch (Exception)
+        {
+            error = "Er ging iets mis bij het laden. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private Task StartPlacement() => StartAsync(() => Practice.StartPlacementAsync(Learner.Id, SubjectId));
+    private Task StartMix() => StartAsync(() => Practice.StartMixPracticeAsync(Learner.Id, SubjectId));
+
+    private async Task StartAsync(Func<Task<Attempt>> start)
+    {
+        if (busy) return;
+        busy = true;
+        actionError = null;
+        try
+        {
+            var attempt = await start();
+            Nav.NavigateTo(LearnUi.PlayerHref(attempt));
+        }
+        catch (Exception ex)
+        {
+            actionError = LearnUi.Message(ex, "De oefening kon niet worden gestart. Probeer het opnieuw.");
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

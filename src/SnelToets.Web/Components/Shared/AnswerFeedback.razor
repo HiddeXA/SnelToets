@@ -1,0 +1,82 @@
+@* Feedback after an answer: "Goed!" or "Helaas…" with the tip, option feedback, the correct answer and the explanation. *@
+
+<div class="feedback answer-fb @(Feedback.IsCorrect ? "correct" : "wrong")" role="status" aria-live="polite">
+    <div class="feedback-title fb-title">
+        <span class="fb-icon" aria-hidden="true">@(Feedback.IsCorrect ? "✓" : "✗")</span>
+        @(Feedback.IsCorrect ? CorrectTitle : WrongTitle)
+    </div>
+
+    @if (!Feedback.IsCorrect && !string.IsNullOrWhiteSpace(Feedback.Tip))
+    {
+        <div class="fb-block fb-tip">
+            <div class="fb-label">Tip</div>
+            <MarkdownView Text="@Feedback.Tip" />
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Feedback.OptionFeedback))
+    {
+        <div class="fb-block"><MarkdownView Text="@Feedback.OptionFeedback" /></div>
+    }
+
+    @if (!Feedback.IsCorrect && ShowCorrectAnswer)
+    {
+        <div class="fb-block">
+            <div class="fb-label">Het goede antwoord</div>
+            @if (Item.Question?.Type == QuestionType.FillIn)
+            {
+                var accepted = Feedback.AcceptedAnswers.Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
+                if (accepted.Count == 0)
+                {
+                    <span class="muted">Onbekend</span>
+                }
+                else
+                {
+                    <div class="fb-answer">@accepted[0]</div>
+                    @if (accepted.Count > 1)
+                    {
+                        <div class="small muted">Ook goed: @string.Join(", ", accepted.Skip(1))</div>
+                    }
+                }
+            }
+            else
+            {
+                var options = LearnUi.OrderedOptions(Item);
+                <ul class="fb-options">
+                    @for (var i = 0; i < options.Count; i++)
+                    {
+                        if (!Feedback.CorrectOptionIds.Contains(options[i].Id)) continue;
+                        <li><span class="fb-key">@LearnUi.Letter(i)</span> <MarkdownView Text="@options[i].Text" Inline="true" /></li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Feedback.Explanation))
+    {
+        <div class="fb-block">
+            <div class="fb-label">Uitleg</div>
+            <MarkdownView Text="@Feedback.Explanation" />
+        </div>
+    }
+
+    @if (OnShowTheory.HasDelegate)
+    {
+        <div class="fb-actions">
+            <button type="button" class="btn btn-sm fb-theory" @onclick="() => OnShowTheory.InvokeAsync()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" /></svg>
+                Bekijk theorie
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ItemFeedback Feedback { get; set; } = default!;
+    [Parameter, EditorRequired] public AttemptItem Item { get; set; } = default!;
+    [Parameter] public bool ShowCorrectAnswer { get; set; } = true;
+    [Parameter] public string CorrectTitle { get; set; } = "Goed!";
+    [Parameter] public string WrongTitle { get; set; } = "Helaas, dat is niet goed.";
+    [Parameter] public EventCallback OnShowTheory { get; set; }
+}

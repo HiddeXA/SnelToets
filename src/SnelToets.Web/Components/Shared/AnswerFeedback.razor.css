@@ -1,0 +1,18 @@
+.answer-fb { animation: st-rise .25s ease-out; }
+.fb-title { display: flex; align-items: center; gap: .5rem; font-size: 1.05rem; }
+.fb-icon { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-size: .8rem; font-weight: 800; flex: none; }
+.correct .fb-icon { background: var(--good); }
+.wrong .fb-icon { background: var(--bad); }
+.fb-block { margin-top: .75rem; }
+.fb-block ::deep .prose p:last-child { margin-bottom: 0; }
+.fb-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); margin-bottom: .15rem; }
+.fb-tip { background: var(--surface); border-radius: var(--radius-sm); padding: .65rem .8rem; border: 1px solid var(--border); }
+.fb-tip .fb-label { color: var(--warn); }
+.fb-answer { font-weight: 700; }
+.fb-options { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .25rem; }
+.fb-options li { display: flex; gap: .5rem; align-items: baseline; font-weight: 600; }
+.fb-key { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 5px; background: var(--good); color: #fff; font-size: .75rem; font-weight: 700; }
+.fb-actions { margin-top: .85rem; }
+.fb-theory svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+@keyframes st-rise { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .answer-fb { animation: none; } }

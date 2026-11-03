@@ -1,0 +1,7 @@
+.confirm-modal { animation: st-pop .18s ease-out; }
+.confirm-body { color: var(--text-2); margin-bottom: 1.25rem; }
+.confirm-actions { display: flex; gap: .5rem; justify-content: flex-end; flex-wrap: wrap-reverse; }
+.confirm-actions .btn { flex: 1 1 auto; }
+@media (min-width: 768px) { .confirm-modal { max-width: 440px; } .confirm-actions .btn { flex: 0 0 auto; } }
+@keyframes st-pop { from { transform: translateY(16px); opacity: .5; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .confirm-modal { animation: none; } }

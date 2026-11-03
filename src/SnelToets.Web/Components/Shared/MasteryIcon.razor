@@ -1,0 +1,16 @@
+@* "!" for topics that need attention, a check for mastered topics. *@
+@if (Mastered)
+{
+    <span class="mastered-icon" title="Beheerst" aria-label="Beheerst">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8.4l2.6 2.6L12 5.4" /></svg>
+    </span>
+}
+else if (NeedsAttention)
+{
+    <span class="attention" title="Hier valt winst te halen" aria-label="Aandacht nodig">!</span>
+}
+
+@code {
+    [Parameter] public bool Mastered { get; set; }
+    [Parameter] public bool NeedsAttention { get; set; }
+}

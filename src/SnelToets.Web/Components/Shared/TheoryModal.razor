@@ -1,0 +1,41 @@
+@* Pop-up (bottom sheet on mobile) with a topic's theory. *@
+@if (Open)
+{
+    <div class="modal-backdrop theory-backdrop" @onclick="Close">
+        <div class="modal theory-modal" role="dialog" aria-modal="true" aria-labelledby="theory-title" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div>
+                    <div class="small muted">Theorie</div>
+                    <h2 id="theory-title">@(Title ?? "Theorie")</h2>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm close-x" @onclick="Close" aria-label="Sluiten">✕</button>
+            </div>
+            @if (Loading)
+            {
+                <p class="muted">Theorie laden…</p>
+            }
+            else if (string.IsNullOrWhiteSpace(Markdown))
+            {
+                <p class="muted">Er is nog geen theorie voor dit onderwerp.</p>
+            }
+            else
+            {
+                <MarkdownView Text="@Markdown" />
+            }
+            <div class="theory-footer">
+                <button type="button" class="btn btn-primary btn-block" @onclick="Close">@CloseLabel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Markdown { get; set; }
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string CloseLabel { get; set; } = "Terug naar de vraag";
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private Task Close() => OnClose.InvokeAsync();
+}

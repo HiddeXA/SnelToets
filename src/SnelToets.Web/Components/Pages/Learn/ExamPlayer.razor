@@ -1,0 +1,377 @@
+@page "/toets/afname/{AttemptId:guid}"
+@implements IAsyncDisposable
+@inject IPracticeService Practice
+@inject LearnerSession Learner
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@(attempt?.Test?.Title ?? "Toets") – SnelToets</PageTitle>
+
+@if (loading)
+{
+    <p class="muted">Toets laden…</p>
+}
+else if (attempt is null)
+{
+    <div class="card empty">
+        <h1>Toets niet gevonden</h1>
+        <p>@(error ?? "Deze toetsafname bestaat niet (meer).")</p>
+        <a class="btn btn-primary" href="toetsen">Naar de toetsen</a>
+    </div>
+}
+else if (items.Count == 0)
+{
+    <div class="card empty">
+        <h1>@Title</h1>
+        <p>Deze toets bevat geen vragen.</p>
+        <button type="button" class="btn btn-primary" @onclick="FinishAsync">Afronden</button>
+    </div>
+}
+else
+{
+    <div class="exam">
+        <header class="exam-head">
+            <div class="head-row">
+                <div class="head-title">
+                    <span class="kind">Toets</span>
+                    <span class="name">@Title</span>
+                </div>
+                @if (attempt.Deadline is DateTime deadline)
+                {
+                    <CountdownTimer Deadline="deadline" OnExpired="OnExpiredAsync" />
+                }
+            </div>
+            <div class="head-meta small muted">
+                <span>Vraag @(index + 1) van @items.Count</span>
+                <span>@AnsweredCount van @items.Count beantwoord</span>
+                <span class="save-state @(saving ? "busy" : "")" aria-live="polite">@(saving ? "Opslaan…" : savedOnce ? "Opgeslagen" : "")</span>
+            </div>
+        </header>
+
+        @if (notice is not null)
+        {
+            <div class="alert warn" role="alert">@notice</div>
+        }
+
+        <div class="exam-body">
+            <section class="card question-card" aria-labelledby="q-number">
+                @{
+                    var item = items[index];
+                }
+                <div class="row between q-top">
+                    <span id="q-number" class="q-number small muted">Vraag @(index + 1)</span>
+                    <button type="button" class="btn btn-ghost btn-sm flag @(flagged.Contains(item.Id) ? "on" : "")" @onclick="() => ToggleFlag(item.Id)"
+                            aria-pressed="@(flagged.Contains(item.Id) ? "true" : "false")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4m0 0h11l-2 4 2 4H5" /></svg>
+                        @(flagged.Contains(item.Id) ? "Gemarkeerd" : "Markeer")
+                    </button>
+                </div>
+                <QuestionCard @key="item.Id"
+                              Item="item"
+                              Selected="SelectedFor(item)"
+                              Text="@texts.GetValueOrDefault(item.Id)"
+                              Locked="finishing"
+                              OnOptionClick="OptionClicked"
+                              OnTextInput="v => texts[item.Id] = v"
+                              OnTextSubmit="CommitAndNext"
+                              OnTextCommit="() => CommitTextAsync(item)" />
+
+                <div class="exam-nav">
+                    <button type="button" class="btn" @onclick="Prev" disabled="@(index == 0)">‹ Vorige</button>
+                    @if (index < items.Count - 1)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="NextAsync">Volgende ›</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="AskFinish">Toets inleveren</button>
+                    }
+                </div>
+            </section>
+
+            <aside class="card navigator" aria-label="Vragenoverzicht">
+                <div class="row between nav-top">
+                    <h2 class="nav-title">Overzicht</h2>
+                    <span class="small muted">@AnsweredCount/@items.Count</span>
+                </div>
+                <div class="nav-grid">
+                    @for (var i = 0; i < items.Count; i++)
+                    {
+                        var idx = i;
+                        var it = items[i];
+                        var answered = IsAnswered(it);
+                        var cls = (idx == index ? "current " : "") + (answered ? "answered " : "") + (flagged.Contains(it.Id) ? "flagged" : "");
+                        <button type="button" class="nav-cell @cls" @onclick="() => GoAsync(idx)"
+                                aria-label="@NavLabel(idx, answered, flagged.Contains(it.Id))"
+                                aria-current="@(idx == index ? "step" : null)">@(idx + 1)</button>
+                    }
+                </div>
+                <div class="legend small muted">
+                    <span><i class="lg answered"></i>Beantwoord</span>
+                    <span><i class="lg"></i>Open</span>
+                    <span><i class="lg flagged"></i>Gemarkeerd</span>
+                </div>
+                <button type="button" class="btn btn-block mt-2 hand-in" @onclick="AskFinish">Toets inleveren</button>
+            </aside>
+        </div>
+    </div>
+
+    <ConfirmDialog Open="confirmOpen" Title="Toets inleveren?" ConfirmText="Inleveren" CancelText="Terug naar de toets"
+                   Busy="finishing" OnConfirm="FinishAsync" OnCancel="() => confirmOpen = false">
+        @if (Unanswered == 0)
+        {
+            <p>Je hebt alle vragen beantwoord. Na het inleveren zie je je score en de uitleg bij elke vraag.</p>
+        }
+        else
+        {
+            <p>Je hebt nog <strong>@LearnUi.QuestionWord(Unanswered)</strong> niet beantwoord. Een open vraag telt als fout.</p>
+        }
+        @if (flagged.Count > 0)
+        {
+            <p class="small">Je hebt @LearnUi.QuestionWord(flagged.Count) gemarkeerd om nog eens naar te kijken.</p>
+        }
+    </ConfirmDialog>
+}
+
+@code {
+    [Parameter] public Guid AttemptId { get; set; }
+
+    private bool loading = true;
+    private string? error;
+    private string? notice;
+    private Attempt? attempt;
+    private Guid loadedId;
+    private List<AttemptItem> items = [];
+    private int index;
+    private readonly Dictionary<int, HashSet<int>> selections = [];
+    private readonly Dictionary<int, string> texts = [];
+    private readonly Dictionary<int, string> savedTexts = [];
+    private readonly HashSet<int> answered = [];
+    private readonly HashSet<int> flagged = [];
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private bool saving;
+    private bool savedOnce;
+    private bool confirmOpen;
+    private bool finishing;
+    private bool scrollTop;
+
+    private DotNetObjectReference<ExamPlayer>? selfRef;
+    private int? keysId;
+
+    private string Title => attempt?.Test?.Title ?? "Toets";
+    private int AnsweredCount => items.Count(IsAnswered);
+    private int Unanswered => items.Count - AnsweredCount;
+    private bool IsAnswered(AttemptItem it) => answered.Contains(it.Id);
+
+    private static string NavLabel(int idx, bool isAnswered, bool isFlagged) =>
+        $"Vraag {idx + 1}, {(isAnswered ? "beantwoord" : "open")}{(isFlagged ? ", gemarkeerd" : "")}";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedId == AttemptId && attempt is not null) return;
+        loadedId = AttemptId;
+        loading = true;
+        attempt = null;
+        try
+        {
+            var a = await Practice.GetAttemptAsync(AttemptId);
+            if (a is null || (Learner.IsKnown && a.LearnerId != Learner.Id && a.LearnerId != Guid.Empty)) return;
+            if (a.FinishedAt is not null) { Nav.NavigateTo($"resultaat/{a.Id}", replace: true); return; }
+            if (!LearnUi.IsExam(a)) { Nav.NavigateTo($"oefenen/{a.Id}", replace: true); return; }
+
+            items = a.Items.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).ToList();
+            foreach (var it in items)
+            {
+                var ids = LearnUi.ParseIds(it.SelectedOptionIds);
+                if (ids.Count > 0) selections[it.Id] = ids.ToHashSet();
+                if (!string.IsNullOrEmpty(it.TextAnswer)) { texts[it.Id] = it.TextAnswer; savedTexts[it.Id] = it.TextAnswer; }
+                if (it.AnsweredAt is not null) answered.Add(it.Id);
+            }
+            var open = items.FindIndex(i => i.AnsweredAt is null);
+            index = open >= 0 ? open : 0;
+            attempt = a;
+        }
+        catch (Exception)
+        {
+            error = "De toets kon niet worden geladen. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (selfRef is null && attempt is not null)
+            {
+                selfRef = DotNetObjectReference.Create(this);
+                keysId = await JS.InvokeAsync<int>("snelToets.registerKeys", selfRef);
+            }
+            if (scrollTop) { scrollTop = false; await JS.InvokeVoidAsync("snelToets.scrollTop"); }
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    private IReadOnlySet<int> SelectedFor(AttemptItem item) =>
+        selections.TryGetValue(item.Id, out var s) ? s : new HashSet<int>();
+
+    private async Task OptionClicked(int optionId)
+    {
+        if (finishing) return;
+        var item = items[index];
+        if (item.Question is not { } q) return;
+        if (q.Type == QuestionType.MultipleSelect)
+        {
+            if (!selections.TryGetValue(item.Id, out var set)) selections[item.Id] = set = [];
+            if (!set.Remove(optionId)) set.Add(optionId);
+            if (set.Count == 0) { answered.Remove(item.Id); return; }
+        }
+        else
+        {
+            if (selections.TryGetValue(item.Id, out var cur) && cur.Count == 1 && cur.Contains(optionId)) return;
+            selections[item.Id] = [optionId];
+        }
+        answered.Add(item.Id);
+        await SaveAsync(item, AnswerSubmission.Choice(selections[item.Id].ToArray()));
+    }
+
+    private async Task CommitTextAsync(AttemptItem item)
+    {
+        if (item.Question?.Type != QuestionType.FillIn) return;
+        var text = texts.GetValueOrDefault(item.Id)?.Trim() ?? "";
+        if (savedTexts.GetValueOrDefault(item.Id, "") == text) return;
+        if (text.Length == 0) { answered.Remove(item.Id); return; }
+        savedTexts[item.Id] = text;
+        answered.Add(item.Id);
+        await SaveAsync(item, AnswerSubmission.Typed(text));
+    }
+
+    private async Task CommitAndNext()
+    {
+        await CommitTextAsync(items[index]);
+        if (index < items.Count - 1) await GoAsync(index + 1);
+    }
+
+    private async Task SaveAsync(AttemptItem item, AnswerSubmission submission)
+    {
+        await gate.WaitAsync();
+        saving = true;
+        try
+        {
+            await Practice.SubmitAnswerAsync(AttemptId, item.Id, submission);
+            savedOnce = true;
+            notice = null;
+        }
+        catch (InvalidOperationException ex)
+        {
+            notice = ex.Message;
+            if (attempt?.Deadline is DateTime d && DateTime.SpecifyKind(d, DateTimeKind.Utc) <= DateTime.UtcNow)
+            {
+                gate.Release();
+                saving = false;
+                await FinishCoreAsync();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            notice = LearnUi.Message(ex, "Je antwoord kon niet worden opgeslagen. Controleer je verbinding en probeer het opnieuw.");
+            answered.Remove(item.Id);
+            savedTexts.Remove(item.Id);
+        }
+        saving = false;
+        gate.Release();
+    }
+
+    private async Task GoAsync(int i)
+    {
+        if (i < 0 || i >= items.Count || i == index) return;
+        await CommitTextAsync(items[index]);
+        index = i;
+        scrollTop = true;
+    }
+
+    private Task Prev() => GoAsync(index - 1);
+    private Task NextAsync() => GoAsync(index + 1);
+
+    private void ToggleFlag(int itemId)
+    {
+        if (!flagged.Remove(itemId)) flagged.Add(itemId);
+    }
+
+    private async Task AskFinish()
+    {
+        await CommitTextAsync(items[index]);
+        confirmOpen = true;
+    }
+
+    private async Task OnExpiredAsync()
+    {
+        notice = "De tijd is om. Je toets wordt ingeleverd…";
+        StateHasChanged();
+        await FinishCoreAsync();
+    }
+
+    private async Task FinishAsync()
+    {
+        if (items.Count > 0) await CommitTextAsync(items[index]);
+        await FinishCoreAsync();
+    }
+
+    private async Task FinishCoreAsync()
+    {
+        if (finishing) return;
+        finishing = true;
+        await gate.WaitAsync();
+        try
+        {
+            await Practice.FinishAsync(AttemptId);
+            Nav.NavigateTo($"resultaat/{AttemptId}");
+        }
+        catch (Exception ex) { notice = LearnUi.Message(ex, "De toets kon niet worden ingeleverd. Probeer het opnieuw."); finishing = false; confirmOpen = false; }
+        finally { gate.Release(); }
+    }
+
+    [JSInvokable]
+    public async Task OnKey(string key)
+    {
+        if (confirmOpen)
+        {
+            if (key == "Escape" && !finishing) { confirmOpen = false; StateHasChanged(); }
+            return;
+        }
+        if (finishing || items.Count == 0) return;
+        switch (key)
+        {
+            case "ArrowLeft": await Prev(); break;
+            case "ArrowRight": await NextAsync(); break;
+            case "Enter":
+                if (index < items.Count - 1) await NextAsync(); else await AskFinish();
+                break;
+            default:
+                var item = items[index];
+                if (item.Question is null || item.Question.Type == QuestionType.FillIn) return;
+                var pos = PracticePlayer.KeyToIndex(key);
+                var options = LearnUi.OrderedOptions(item);
+                if (pos >= 0 && pos < options.Count) await OptionClicked(options[pos].Id);
+                break;
+        }
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (keysId is int id) await JS.InvokeVoidAsync("snelToets.unregisterKeys", id);
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        selfRef?.Dispose();
+        gate.Dispose();
+    }
+}
