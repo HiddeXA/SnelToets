@@ -1,0 +1,31 @@
+@* Small confirmation dialog. *@
+@if (Open)
+{
+    <div class="modal-backdrop confirm-backdrop" @onclick="Cancel">
+        <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" @onclick:stopPropagation="true">
+            <h2 id="confirm-title">@Title</h2>
+            <div class="confirm-body">@ChildContent</div>
+            <div class="confirm-actions">
+                <button type="button" class="btn" @onclick="Cancel" disabled="@Busy">@CancelText</button>
+                <button type="button" class="btn @(Danger ? "btn-danger" : "btn-primary")" @onclick="Confirm" disabled="@Busy">
+                    @(Busy ? "Even geduld…" : ConfirmText)
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public string Title { get; set; } = "Weet je het zeker?";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string ConfirmText { get; set; } = "Ja";
+    [Parameter] public string CancelText { get; set; } = "Annuleren";
+    [Parameter] public bool Danger { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private Task Confirm() => OnConfirm.InvokeAsync();
+    private Task Cancel() => Busy ? Task.CompletedTask : OnCancel.InvokeAsync();
+}

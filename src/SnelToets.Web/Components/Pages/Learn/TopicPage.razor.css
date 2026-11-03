@@ -1,0 +1,15 @@
+.start-card { display: flex; flex-direction: column; gap: .75rem; }
+.status-line { gap: .45rem; }
+.start-actions { display: flex; flex-direction: column; gap: .4rem; }
+.start-btn { width: 100%; }
+@media (min-width: 640px) {
+    .start-actions { flex-direction: row; align-items: center; gap: 1rem; }
+    .start-btn { width: auto; padding-inline: 1.6rem; }
+}
+.no-q { margin: 0; }
+.theory { padding: 1.25rem; }
+.theory-title { font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-2); }
+@media (min-width: 768px) { .theory { padding: 1.5rem 2rem; } .theory ::deep .prose { font-size: 1.05rem; } }
+.bottom-actions { margin-top: 1rem; }
+@media (min-width: 640px) { .bottom-actions .btn-block { width: auto; padding-inline: 1.6rem; } }
+.footer-links .btn-ghost { padding-inline: .25rem; text-align: left; }

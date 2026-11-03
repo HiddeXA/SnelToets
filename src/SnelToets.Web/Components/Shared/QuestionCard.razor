@@ -1,0 +1,97 @@
+@* Renders one question (prompt, context, options / input). Controlled by the parent:
+   the parent keeps the selection and decides what a click does. Pass Feedback to reveal right/wrong. *@
+
+@{
+    var q = Item.Question;
+}
+@if (q is null)
+{
+    <p class="muted">Deze vraag is niet meer beschikbaar.</p>
+}
+else
+{
+    <div class="qcard">
+        <div class="question-prompt"><MarkdownView Text="@q.Prompt" Class="prompt-md" /></div>
+        @if (!string.IsNullOrWhiteSpace(q.Context))
+        {
+            <div class="question-context"><MarkdownView Text="@q.Context" Class="context-md" /></div>
+        }
+
+        @if (q.Type == QuestionType.FillIn)
+        {
+            <form class="fillin" @onsubmit="SubmitText" @onsubmit:preventDefault="true" autocomplete="off">
+                <label class="sr-only" for="fillin-@Item.Id">Jouw antwoord</label>
+                <input id="fillin-@Item.Id" type="text" class="fillin-input @FillInState"
+                       value="@Text" @oninput="TextInput" @onchange="TextChange"
+                       disabled="@Locked" placeholder="Typ je antwoord"
+                       autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
+                @if (Feedback is not null)
+                {
+                    <span class="fillin-mark @(Feedback.IsCorrect ? "ok" : "no")" aria-hidden="true">@(Feedback.IsCorrect ? "✓" : "✗")</span>
+                }
+            </form>
+        }
+        else
+        {
+            var options = LearnUi.OrderedOptions(Item);
+            var multi = q.Type == QuestionType.MultipleSelect;
+            @if (multi && !Locked)
+            {
+                <p class="multi-hint small muted">Kies alle goede antwoorden en klik op <strong>Controleer</strong>.</p>
+            }
+            <div class="options @(q.Type == QuestionType.TrueFalse ? "tf" : "")" role="@(multi ? "group" : "radiogroup")" aria-label="Antwoorden">
+                @for (var i = 0; i < options.Count; i++)
+                {
+                    var opt = options[i];
+                    var letter = LearnUi.Letter(i);
+                    var selected = Selected.Contains(opt.Id);
+                    var state = OptionState(opt, selected);
+                    <button type="button" class="option @state" disabled="@Locked"
+                            role="@(multi ? "checkbox" : "radio")" aria-checked="@(selected ? "true" : "false")"
+                            @onclick="() => OptionClick(opt.Id)">
+                        <span class="key @(multi ? "check" : "")" aria-hidden="true">@(multi && selected ? "✓" : letter)</span>
+                        <span class="option-text"><MarkdownView Text="@opt.Text" Inline="true" /></span>
+                        @if (state.Contains("correct"))
+                        {
+                            <span class="mark ok" aria-label="goed antwoord">✓</span>
+                        }
+                        else if (state.Contains("wrong"))
+                        {
+                            <span class="mark no" aria-label="fout">✗</span>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public AttemptItem Item { get; set; } = default!;
+    [Parameter] public IReadOnlySet<int> Selected { get; set; } = new HashSet<int>();
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public bool Locked { get; set; }
+    /// <summary>When set, the correct options are marked green and wrongly chosen ones red.</summary>
+    [Parameter] public ItemFeedback? Feedback { get; set; }
+    [Parameter] public EventCallback<int> OnOptionClick { get; set; }
+    [Parameter] public EventCallback<string> OnTextInput { get; set; }
+    /// <summary>Enter in the text field.</summary>
+    [Parameter] public EventCallback OnTextSubmit { get; set; }
+    /// <summary>Text field lost focus after a change.</summary>
+    [Parameter] public EventCallback OnTextCommit { get; set; }
+
+    private string FillInState => Feedback is null ? "" : Feedback.IsCorrect ? "correct" : "wrong";
+
+    private string OptionState(AnswerOption opt, bool selected)
+    {
+        if (Feedback is null) return selected ? "selected" : "";
+        var isCorrect = Feedback.CorrectOptionIds.Contains(opt.Id);
+        if (isCorrect) return selected ? "correct chosen" : "correct missed";
+        return selected ? "wrong chosen" : "dim";
+    }
+
+    private Task OptionClick(int id) => Locked ? Task.CompletedTask : OnOptionClick.InvokeAsync(id);
+    private Task TextInput(ChangeEventArgs e) => OnTextInput.InvokeAsync(e.Value?.ToString() ?? "");
+    private Task TextChange(ChangeEventArgs e) => OnTextCommit.InvokeAsync();
+    private Task SubmitText() => Locked ? Task.CompletedTask : OnTextSubmit.InvokeAsync();
+}

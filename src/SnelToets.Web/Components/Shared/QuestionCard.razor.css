@@ -1,0 +1,40 @@
+.qcard ::deep .prompt-md p:last-child,
+.qcard ::deep .context-md p:last-child { margin-bottom: 0; }
+.qcard ::deep .prompt-md { line-height: 1.45; }
+.question-prompt { margin-bottom: .75rem; }
+.multi-hint { margin: -.25rem 0 .6rem; }
+
+.option { transition: border-color .15s, background-color .2s, transform .08s; }
+.option:active:not(:disabled) { transform: scale(.99); }
+.option-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.option .key { transition: background-color .2s, color .2s; }
+.option.selected .key { background: var(--primary); color: #fff; }
+.option .key.check { border: 2px solid var(--border); background: var(--surface); }
+.option.selected .key.check { border-color: var(--primary); background: var(--primary); color: #fff; }
+.option.correct .key { background: var(--good); color: #fff; border-color: var(--good); }
+.option.wrong .key { background: var(--bad); color: #fff; border-color: var(--bad); }
+.option.correct.missed { border-style: dashed; }
+.option.dim { opacity: .6; }
+.option:disabled { color: var(--text); }
+.mark { flex: none; font-weight: 800; font-size: 1.1rem; }
+.mark.ok { color: var(--good); }
+.mark.no { color: var(--bad); }
+.option.chosen { animation: st-pulse .35s ease-out; }
+
+.options.tf { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.options.tf .option { flex-direction: column; justify-content: center; text-align: center; min-height: 88px; font-size: 1.1rem; font-weight: 600; gap: .35rem; }
+.options.tf .option .mark { position: absolute; }
+.options.tf .option { position: relative; }
+.options.tf .option .mark { top: .4rem; right: .6rem; }
+
+.fillin { position: relative; }
+.fillin-input { font-size: 1.1rem; min-height: 52px; padding-right: 2.5rem; border-width: 2px; }
+.fillin-input.correct { border-color: var(--good); background: var(--good-soft); }
+.fillin-input.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.fillin-input:disabled { color: var(--text); opacity: 1; }
+.fillin-mark { position: absolute; right: .9rem; top: 50%; transform: translateY(-50%); font-weight: 800; font-size: 1.15rem; }
+.fillin-mark.ok { color: var(--good); }
+.fillin-mark.no { color: var(--bad); }
+
+@keyframes st-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.015); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .option.chosen { animation: none; } }

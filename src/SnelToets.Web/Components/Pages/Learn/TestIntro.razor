@@ -1,0 +1,157 @@
+@page "/toets/{TestId:int}"
+@inject ITestService Tests
+@inject IPracticeService Practice
+@inject LearnerSession Learner
+@inject NavigationManager Nav
+
+<PageTitle>@(test?.Title ?? "Toets") – SnelToets</PageTitle>
+
+@if (loading)
+{
+    <p class="muted">Laden…</p>
+}
+else if (test is null)
+{
+    <div class="card empty">
+        <h1>Toets niet gevonden</h1>
+        <p>@(error ?? "Deze toets bestaat niet (meer).")</p>
+        <a class="btn btn-primary" href="toetsen">Naar de toetsen</a>
+    </div>
+}
+else
+{
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="toetsen">Toetsen</a><span class="sep"></span><span>@test.Title</span>
+    </nav>
+    <header class="page-header">
+        <span class="badge @(test.Mode == TestMode.Exam ? "warn" : "primary")">@LearnUi.ModeLabel(test.Mode)</span>
+        <h1 class="mt-1">@test.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(test.Description))
+        {
+            <p class="lead">@test.Description</p>
+        }
+    </header>
+
+    @if (actionError is not null)
+    {
+        <div class="alert bad" role="alert">@actionError</div>
+    }
+
+    <section class="card intro-card">
+        <dl class="facts">
+            <div><dt>Vragen</dt><dd>@questionCount</dd></div>
+            <div><dt>Tijd</dt><dd>@(test.TimeLimitMinutes is int m and > 0 ? LearnUi.Minutes(m) : "Onbeperkt")</dd></div>
+            <div><dt>Norm</dt><dd>@test.PassPercentage% goed</dd></div>
+        </dl>
+
+        <div class="mode-explain">
+            @if (test.Mode == TestMode.Exam)
+            {
+                <p><strong>Zoals de echte toets.</strong> Je krijgt geen feedback tijdens het maken. Je kunt vrij heen en weer bladeren en je antwoorden aanpassen tot je inlevert. Daarna zie je je score, de goede antwoorden en een tip bij elke fout.</p>
+                @if (test.TimeLimitMinutes is int min and > 0)
+                {
+                    <p>De tijd loopt vanaf het moment dat je start. Na @LearnUi.Minutes(min) wordt je toets automatisch ingeleverd.</p>
+                }
+            }
+            else
+            {
+                <p><strong>Oefentoets.</strong> Na elke vraag zie je meteen of je antwoord goed is, met een tip en de theorie als je het fout hebt.</p>
+            }
+        </div>
+
+        @if (questionCount == 0)
+        {
+            <p class="muted">Deze toets heeft nog geen vragen.</p>
+        }
+        else if (openAttempt is not null)
+        {
+            <div class="btn-row">
+                <a class="btn btn-primary" href="@LearnUi.PlayerHref(openAttempt)">Ga verder met je toets</a>
+                <button type="button" class="btn" @onclick="StartAsync" disabled="@busy">Opnieuw beginnen</button>
+            </div>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary start-btn" @onclick="StartAsync" disabled="@busy">
+                @(busy ? "Toets klaarzetten…" : "Start toets")
+            </button>
+        }
+    </section>
+
+    @if (previous.Count > 0)
+    {
+        <section class="mt-3" aria-labelledby="prev-title">
+            <h2 id="prev-title" class="section-title">Eerdere pogingen</h2>
+            <div class="card prev-list">
+                @foreach (var a in previous)
+                {
+                    var pct = a.TotalCount == 0 ? 0 : 100.0 * a.CorrectCount / a.TotalCount;
+                    var passed = pct >= a.PassPercentage;
+                    <a class="prev-row" href="resultaat/@a.Id">
+                        <span class="small muted">@LearnUi.DateLabel(a.FinishedAt ?? a.StartedAt)</span>
+                        <span class="spacer"></span>
+                        <span class="small">@a.CorrectCount van @a.TotalCount</span>
+                        <span class="badge @(passed ? "good" : "bad")">@LearnUi.Pct(pct)</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+}
+
+@code {
+    [Parameter] public int TestId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private string? error;
+    private string? actionError;
+    private Test? test;
+    private int questionCount;
+    private Attempt? openAttempt;
+    private List<Attempt> previous = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        test = null;
+        try
+        {
+            test = await Tests.GetTestAsync(TestId);
+            if (test is not null)
+            {
+                questionCount = await Tests.CountQuestionsAsync(TestId);
+                try
+                {
+                    var attempts = (await Practice.GetRecentAttemptsAsync(Learner.Id, 50))
+                        .Where(a => a.TestId == TestId && a.Kind == AttemptKind.Test).ToList();
+                    openAttempt = attempts.FirstOrDefault(a => a.FinishedAt is null && (a.Deadline is null || a.Deadline > DateTime.UtcNow));
+                    previous = attempts.Where(a => a.FinishedAt is not null).OrderByDescending(a => a.FinishedAt).Take(5).ToList();
+                }
+                catch (Exception) { /* history is optional */ }
+            }
+        }
+        catch (Exception)
+        {
+            error = "Er ging iets mis bij het laden. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        if (busy) return;
+        busy = true;
+        actionError = null;
+        try
+        {
+            var attempt = await Practice.StartTestAsync(Learner.Id, TestId);
+            Nav.NavigateTo(LearnUi.PlayerHref(attempt));
+        }
+        catch (Exception ex) { actionError = LearnUi.Message(ex, "De toets kon niet worden gestart. Probeer het opnieuw."); }
+        finally { busy = false; }
+    }
+}

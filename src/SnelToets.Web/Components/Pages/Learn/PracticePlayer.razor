@@ -1,0 +1,457 @@
+@page "/oefenen/{AttemptId:guid}"
+@implements IAsyncDisposable
+@inject IPracticeService Practice
+@inject IContentService Content
+@inject LearnerSession Learner
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@(title ?? "Oefenen") – SnelToets</PageTitle>
+
+@if (loading)
+{
+    <p class="muted">Vragen laden…</p>
+}
+else if (attempt is null)
+{
+    <div class="card empty">
+        <h1>Oefening niet gevonden</h1>
+        <p>@(error ?? "Deze oefening bestaat niet (meer).")</p>
+        <a class="btn btn-primary" href="">Naar het overzicht</a>
+    </div>
+}
+else if (items.Count == 0)
+{
+    <div class="card empty">
+        <h1>@title</h1>
+        <p>Deze oefening bevat geen vragen.</p>
+        <a class="btn btn-primary" href="@BackHref">Terug</a>
+    </div>
+}
+else
+{
+    <div class="player">
+        <header class="player-head">
+            <div class="head-row">
+                <a class="btn btn-ghost btn-sm stop" href="@BackHref" title="Je voortgang wordt bewaard">✕ <span>Stoppen</span></a>
+                <div class="head-title">
+                    <span class="kind">@LearnUi.KindLabel(attempt)</span>
+                    <span class="name">@title</span>
+                </div>
+                <span class="counter" aria-live="polite">@CounterText</span>
+            </div>
+            <div class="progress-steps steps" role="list" aria-label="Voortgang">
+                @for (var i = 0; i < items.Count; i++)
+                {
+                    var idx = i;
+                    var it = items[i];
+                    var cls = (idx == index ? "current " : "") + (it.AnsweredAt is null ? "" : it.IsCorrect == true ? "ok" : "no");
+                    if (it.AnsweredAt is not null)
+                    {
+                        <button type="button" role="listitem" class="step @cls" @onclick="() => ViewItem(idx)" aria-label="Vraag @(idx + 1): @(it.IsCorrect == true ? "goed" : "fout")"></button>
+                    }
+                    else
+                    {
+                        <span role="listitem" class="step @cls" aria-label="@($"Vraag {idx + 1}{(idx == index ? " (huidige)" : "")}")"></span>
+                    }
+                }
+            </div>
+        </header>
+
+        @if (attempt.Kind == AttemptKind.Placement && AnsweredCount == 0)
+        {
+            <div class="alert intro">
+                <strong>Starttoets:</strong> een paar vragen per onderwerp. Zo zie je waar je staat en welk onderwerp je het beste eerst kunt oefenen.
+            </div>
+        }
+
+        @if (Current is AttemptItem item)
+        {
+            var fb = feedback.GetValueOrDefault(item.Id);
+            var topicId = item.Question?.TopicId ?? 0;
+            var topicName = topics.GetValueOrDefault(topicId)?.Name ?? "Onderwerp";
+            var value = mastery.GetValueOrDefault(topicId);
+            var animateFrom = justAnswered == item.Id ? fb?.PreviousMastery : null;
+
+            <div class="meter card">
+                <ScoreBar Value="value" From="animateFrom" Label="@topicName" />
+                @if (justAnswered == item.Id && fb?.NewMastery is double nm && fb.PreviousMastery is double pm && Math.Abs(nm - pm) >= 0.5)
+                {
+                    <span class="delta @(nm > pm ? "up" : "down")" @key="item.Id">@DeltaText(pm, nm)</span>
+                }
+            </div>
+
+            <section class="card question-card" aria-labelledby="q-number" @key="item.Id">
+                <div id="q-number" class="q-number small muted">Vraag @(index + 1)</div>
+                <QuestionCard Item="item"
+                              Selected="SelectedFor(item)"
+                              Text="@texts.GetValueOrDefault(item.Id)"
+                              Locked="fb is not null || busy"
+                              Feedback="fb"
+                              OnOptionClick="OptionClicked"
+                              OnTextInput="v => texts[item.Id] = v"
+                              OnTextSubmit="CheckAsync" />
+
+                @if (actionError is not null)
+                {
+                    <div class="alert bad mt-1" role="alert">@actionError</div>
+                }
+
+                @if (fb is not null)
+                {
+                    <AnswerFeedback Feedback="fb" Item="item" OnShowTheory="OpenTheory" />
+                }
+
+                <div class="answer-actions">
+                    @if (fb is null)
+                    {
+                        if (NeedsCheckButton(item))
+                        {
+                            <button type="button" class="btn btn-primary btn-block" @onclick="CheckAsync" disabled="@(busy || !CanCheck(item))">
+                                @(busy ? "Controleren…" : "Controleer")
+                            </button>
+                        }
+                        else
+                        {
+                            <p class="small muted hint-keys">Kies een antwoord<span class="desktop-only"> (toets 1–@LearnUi.OrderedOptions(item).Count)</span>.</p>
+                        }
+                    }
+                    else if (AllAnswered)
+                    {
+                        <button type="button" class="btn btn-primary btn-block next-btn" @onclick="FinishAsync" disabled="@busy">
+                            @(busy ? "Even geduld…" : "Bekijk je resultaat")
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary btn-block next-btn" @onclick="Next">
+                            @(justAnswered == item.Id ? "Volgende vraag" : "Terug naar de huidige vraag")
+                        </button>
+                    }
+                    @if (fb is not null)
+                    {
+                        <span class="small muted desktop-only kbd-hint">Druk op Enter om verder te gaan</span>
+                    }
+                </div>
+            </section>
+        }
+        else
+        {
+            <section class="card done-card">
+                <div class="done-icon" aria-hidden="true">✓</div>
+                <h2>Alle vragen zijn beantwoord</h2>
+                <p class="muted">Bekijk je resultaat en de tips bij je fouten.</p>
+                @if (actionError is not null)
+                {
+                    <div class="alert bad" role="alert">@actionError</div>
+                }
+                <button type="button" class="btn btn-primary" @onclick="FinishAsync" disabled="@busy">Bekijk je resultaat</button>
+            </section>
+        }
+    </div>
+
+    <TheoryModal Open="theoryOpen" Title="@theoryTopic?.Name" Markdown="@theoryTopic?.TheoryMarkdown" Loading="theoryLoading" OnClose="CloseTheory" />
+}
+
+@code {
+    [Parameter] public Guid AttemptId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private string? error;
+    private string? actionError;
+    private Attempt? attempt;
+    private Guid loadedId;
+    private string? title;
+    private List<AttemptItem> items = [];
+    private int index;
+    private int? justAnswered;
+    private readonly Dictionary<int, ItemFeedback> feedback = [];
+    private readonly Dictionary<int, HashSet<int>> selections = [];
+    private readonly Dictionary<int, string> texts = [];
+    private readonly Dictionary<int, double> mastery = [];
+    private readonly Dictionary<int, Topic?> topics = [];
+
+    private bool theoryOpen;
+    private bool theoryLoading;
+    private Topic? theoryTopic;
+
+    private DotNetObjectReference<PracticePlayer>? selfRef;
+    private int? keysId;
+    private bool scrollToFeedback;
+    private bool scrollTop;
+    private bool focusInput;
+
+    private AttemptItem? Current => index >= 0 && index < items.Count ? items[index] : null;
+    private int AnsweredCount => items.Count(i => i.AnsweredAt is not null);
+    private bool AllAnswered => items.All(i => i.AnsweredAt is not null);
+    private int FirstOpenIndex => items.FindIndex(i => i.AnsweredAt is null);
+    private string CounterText => Current is null ? $"{items.Count} van {items.Count}" : $"Vraag {index + 1} van {items.Count}";
+
+    private string BackHref => attempt switch
+    {
+        { Kind: AttemptKind.TopicPractice, TopicId: int t } => $"onderwerp/{t}",
+        { Kind: AttemptKind.Test, TestId: int t } => $"toets/{t}",
+        { SubjectId: int s } => $"vak/{s}",
+        _ => ""
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedId == AttemptId && attempt is not null) return;
+        loadedId = AttemptId;
+        loading = true;
+        error = actionError = null;
+        attempt = null;
+        items = [];
+        feedback.Clear(); selections.Clear(); texts.Clear(); mastery.Clear();
+        try
+        {
+            var a = await Practice.GetAttemptAsync(AttemptId);
+            if (a is null || (Learner.IsKnown && a.LearnerId != Learner.Id && a.LearnerId != Guid.Empty)) return;
+            if (LearnUi.IsExam(a)) { Nav.NavigateTo($"toets/afname/{a.Id}", replace: true); return; }
+            if (a.FinishedAt is not null) { Nav.NavigateTo($"resultaat/{a.Id}", replace: true); return; }
+
+            items = a.Items.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).ToList();
+            foreach (var it in items.Where(i => i.AnsweredAt is not null))
+            {
+                feedback[it.Id] = ItemFeedback.FromItem(it);
+                selections[it.Id] = LearnUi.ParseIds(it.SelectedOptionIds).ToHashSet();
+                if (it.TextAnswer is not null) texts[it.Id] = it.TextAnswer;
+            }
+            var open = items.FindIndex(i => i.AnsweredAt is null);
+            index = open >= 0 ? open : items.Count;
+
+            try
+            {
+                foreach (var m in await Practice.GetMasteryAsync(Learner.Id, a.SubjectId))
+                    mastery[m.TopicId] = m.Score;
+            }
+            catch (Exception) { /* bars start at 0 */ }
+
+            title = await TitleAsync(a);
+            attempt = a;
+            if (Current?.Question is { } q) await EnsureTopicAsync(q.TopicId);
+        }
+        catch (Exception)
+        {
+            error = "De oefening kon niet worden geladen. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task<string> TitleAsync(Attempt a)
+    {
+        try
+        {
+            switch (a.Kind)
+            {
+                case AttemptKind.TopicPractice when a.TopicId is int t:
+                    return (await EnsureTopicAsync(t))?.Name ?? "Oefenreeks";
+                case AttemptKind.Test:
+                    return a.Test?.Title ?? "Oefentoets";
+                default:
+                    if (a.SubjectId is int s && await Content.GetSubjectAsync(s) is { } subject) return subject.Name;
+                    return LearnUi.KindLabel(a);
+            }
+        }
+        catch (Exception) { return LearnUi.KindLabel(a); }
+    }
+
+    private async Task<Topic?> EnsureTopicAsync(int topicId)
+    {
+        if (topics.TryGetValue(topicId, out var cached)) return cached;
+        Topic? t = null;
+        try { t = await Content.GetTopicAsync(topicId); } catch (Exception) { }
+        topics[topicId] = t;
+        return t;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (selfRef is null && attempt is not null)
+            {
+                selfRef = DotNetObjectReference.Create(this);
+                keysId = await JS.InvokeAsync<int>("snelToets.registerKeys", selfRef);
+            }
+            if (scrollToFeedback) { scrollToFeedback = false; await JS.InvokeVoidAsync("snelToets.scrollIntoView", ".answer-actions"); }
+            if (scrollTop) { scrollTop = false; await JS.InvokeVoidAsync("snelToets.scrollTop"); }
+            if (focusInput) { focusInput = false; await JS.InvokeVoidAsync("snelToets.focus", ".question-card .fillin-input"); }
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { /* prerendering */ }
+    }
+
+    private IReadOnlySet<int> SelectedFor(AttemptItem item) =>
+        selections.TryGetValue(item.Id, out var s) ? s : new HashSet<int>();
+
+    private static bool NeedsCheckButton(AttemptItem item) =>
+        item.Question?.Type is QuestionType.MultipleSelect or QuestionType.FillIn;
+
+    private bool CanCheck(AttemptItem item) => item.Question?.Type == QuestionType.FillIn
+        ? !string.IsNullOrWhiteSpace(texts.GetValueOrDefault(item.Id))
+        : SelectedFor(item).Count > 0;
+
+    private async Task OptionClicked(int optionId)
+    {
+        if (Current is not { Question: { } q } item || feedback.ContainsKey(item.Id) || busy) return;
+        if (q.Type == QuestionType.MultipleSelect)
+        {
+            if (!selections.TryGetValue(item.Id, out var set)) selections[item.Id] = set = [];
+            if (!set.Remove(optionId)) set.Add(optionId);
+            return;
+        }
+        selections[item.Id] = [optionId];
+        await SubmitAsync(item, AnswerSubmission.Choice(optionId));
+    }
+
+    private async Task CheckAsync()
+    {
+        if (Current is not { Question: { } q } item || feedback.ContainsKey(item.Id) || busy || !CanCheck(item)) return;
+        var submission = q.Type == QuestionType.FillIn
+            ? AnswerSubmission.Typed(texts.GetValueOrDefault(item.Id)!.Trim())
+            : AnswerSubmission.Choice(SelectedFor(item).ToArray());
+        await SubmitAsync(item, submission);
+    }
+
+    private async Task SubmitAsync(AttemptItem item, AnswerSubmission submission)
+    {
+        busy = true;
+        actionError = null;
+        try
+        {
+            var r = await Practice.SubmitAnswerAsync(AttemptId, item.Id, submission);
+            var fb = ItemFeedback.From(r);
+            if (fb.PreviousMastery is null && mastery.TryGetValue(r.TopicId, out var prev))
+                fb = fb with { PreviousMastery = prev };
+            feedback[item.Id] = fb;
+            item.IsCorrect = r.IsCorrect;
+            item.AnsweredAt = DateTime.UtcNow;
+            item.SelectedOptionIds = string.Join(',', submission.OptionIds);
+            item.TextAnswer = submission.Text;
+            if (r.NewMastery is double nm) mastery[r.TopicId] = nm;
+            justAnswered = item.Id;
+            scrollToFeedback = true;
+            await JS.InvokeVoidAsync("snelToets.blur");
+        }
+        catch (JSDisconnectedException) { }
+        catch (Exception ex) { actionError = LearnUi.Message(ex, "Je antwoord kon niet worden opgeslagen. Probeer het opnieuw."); }
+        finally { busy = false; }
+    }
+
+    private async Task Next()
+    {
+        var open = FirstOpenIndex;
+        index = open >= 0 ? open : items.Count;
+        await AfterMoveAsync();
+    }
+
+    private async Task ViewItem(int i)
+    {
+        if (busy || i == index) return;
+        index = i;
+        await AfterMoveAsync();
+    }
+
+    private async Task AfterMoveAsync()
+    {
+        actionError = null;
+        justAnswered = null;
+        scrollTop = true;
+        if (Current is { Question: { } q } item)
+        {
+            await EnsureTopicAsync(q.TopicId);
+            focusInput = q.Type == QuestionType.FillIn && !feedback.ContainsKey(item.Id);
+        }
+    }
+
+    private async Task FinishAsync()
+    {
+        if (busy) return;
+        busy = true;
+        actionError = null;
+        try
+        {
+            await Practice.FinishAsync(AttemptId);
+            Nav.NavigateTo($"resultaat/{AttemptId}");
+        }
+        catch (Exception ex) { actionError = LearnUi.Message(ex, "De oefening kon niet worden afgerond. Probeer het opnieuw."); }
+        finally { busy = false; }
+    }
+
+    private async Task OpenTheory()
+    {
+        if (Current?.Question is not { } q) return;
+        theoryOpen = true;
+        theoryLoading = !topics.ContainsKey(q.TopicId);
+        StateHasChanged();
+        theoryTopic = await EnsureTopicAsync(q.TopicId);
+        theoryLoading = false;
+    }
+
+    private void CloseTheory() => theoryOpen = false;
+
+    [JSInvokable]
+    public async Task OnKey(string key)
+    {
+        if (theoryOpen)
+        {
+            if (key == "Escape") { theoryOpen = false; StateHasChanged(); }
+            return;
+        }
+        if (Current is not { Question: { } q } item || busy) return;
+
+        if (feedback.ContainsKey(item.Id))
+        {
+            if (key == "Enter")
+            {
+                if (AllAnswered) await FinishAsync(); else await Next();
+                StateHasChanged();
+            }
+            return;
+        }
+
+        if (key == "Enter")
+        {
+            if (NeedsCheckButton(item)) { await CheckAsync(); StateHasChanged(); }
+            return;
+        }
+        if (q.Type == QuestionType.FillIn) return;
+
+        var pos = KeyToIndex(key);
+        var options = LearnUi.OrderedOptions(item);
+        if (pos >= 0 && pos < options.Count)
+        {
+            await OptionClicked(options[pos].Id);
+            StateHasChanged();
+        }
+    }
+
+    private static string DeltaText(double from, double to) =>
+        (to > from ? "+" : "−") + Math.Round(Math.Abs(to - from)).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+
+    internal static int KeyToIndex(string key)
+    {
+        if (key.Length != 1) return -1;
+        var c = char.ToUpperInvariant(key[0]);
+        if (c is >= '1' and <= '9') return c - '1';
+        if (c is >= 'A' and <= 'D') return c - 'A';
+        return -1;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (keysId is int id) await JS.InvokeVoidAsync("snelToets.unregisterKeys", id);
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        selfRef?.Dispose();
+    }
+}

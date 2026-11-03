@@ -1,0 +1,86 @@
+@page "/toetsen"
+@inject ITestService Tests
+
+<PageTitle>Toetsen – SnelToets</PageTitle>
+
+<header class="page-header">
+    <h1>Toetsen</h1>
+    <p class="lead">Test jezelf zoals bij de echte toets. Een oefentoets geeft direct feedback; bij een toets zie je pas na afloop hoe je het hebt gedaan.</p>
+</header>
+
+@if (loading)
+{
+    <p class="muted">Laden…</p>
+}
+else if (error is not null)
+{
+    <div class="alert bad">@error</div>
+}
+else if (rows.Count == 0)
+{
+    <div class="card empty">
+        <h2>Nog geen toetsen</h2>
+        <p>Er zijn nog geen toetsen klaargezet. Oefen in de tussentijd per onderwerp, of stel zelf een toets samen.</p>
+        <div class="btn-row" style="justify-content:center">
+            <a class="btn btn-primary" href="">Naar oefenen</a>
+            <a class="btn" href="beheer/toetsen">Toets samenstellen</a>
+        </div>
+    </div>
+}
+else
+{
+    <ul class="test-list">
+        @foreach (var r in rows)
+        {
+            <li>
+                <a class="card card-link test-card @(r.Count == 0 ? "disabled" : "")" href="toets/@r.Test.Id">
+                    <div class="test-top">
+                        <span class="badge @(r.Test.Mode == TestMode.Exam ? "warn" : "primary")">@LearnUi.ModeLabel(r.Test.Mode)</span>
+                    </div>
+                    <h2 class="test-title">@r.Test.Title</h2>
+                    @if (!string.IsNullOrWhiteSpace(r.Test.Description))
+                    {
+                        <p class="small muted test-desc">@r.Test.Description</p>
+                    }
+                    <div class="facts small">
+                        <span>@(r.Count == 0 ? "Nog geen vragen" : LearnUi.QuestionWord(r.Count))</span>
+                        <span>@(r.Test.TimeLimitMinutes is int m and > 0 ? LearnUi.Minutes(m) : "Geen tijdslimiet")</span>
+                        <span>Norm @r.Test.PassPercentage%</span>
+                    </div>
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private sealed record Row(Test Test, int Count);
+
+    private bool loading = true;
+    private string? error;
+    private List<Row> rows = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tests = await Tests.GetTestsAsync();
+            var list = new List<Row>();
+            foreach (var t in tests)
+            {
+                int count;
+                try { count = await Tests.CountQuestionsAsync(t.Id); } catch (Exception) { count = 0; }
+                list.Add(new(t, count));
+            }
+            rows = list;
+        }
+        catch (Exception)
+        {
+            error = "De toetsen konden niet worden geladen. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

@@ -1,0 +1,212 @@
+@page "/onderwerp/{TopicId:int}"
+@inject IContentService Content
+@inject IPracticeService Practice
+@inject LearnerSession Learner
+@inject NavigationManager Nav
+
+<PageTitle>@(topic?.Name ?? "Onderwerp") – SnelToets</PageTitle>
+
+@if (loading)
+{
+    <p class="muted">Laden…</p>
+}
+else if (topic is null)
+{
+    <div class="card empty">
+        <h1>Onderwerp niet gevonden</h1>
+        <p>@(error ?? "Dit onderwerp bestaat niet (meer).")</p>
+        <a class="btn btn-primary" href="">Naar het overzicht</a>
+    </div>
+}
+else
+{
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        <a href="">Oefenen</a><span class="sep"></span>
+        <a href="vak/@topic.SubjectId">@(topic.Subject?.Name ?? "Vak")</a><span class="sep"></span>
+        <span>@topic.Name</span>
+    </nav>
+    <header class="page-header">
+        <h1>@topic.Name</h1>
+    </header>
+
+    @if (actionError is not null)
+    {
+        <div class="alert bad" role="alert">@actionError</div>
+    }
+    @if (notice is not null)
+    {
+        <div class="alert good" role="status">@notice</div>
+    }
+
+    <section class="card start-card">
+        <div class="row between">
+            <div class="row status-line">
+                <MasteryIcon Mastered="Mastered" NeedsAttention="NeedsAttention" />
+                <span class="small muted">@StatusText</span>
+            </div>
+        </div>
+        <ScoreBar Value="Mastery" Label="Jouw score" />
+        @if (QuestionCount == 0)
+        {
+            <p class="muted small no-q">Voor dit onderwerp zijn nog geen oefenvragen. Lees de theorie alvast door; vragen volgen later.</p>
+        }
+        else
+        {
+            <div class="start-actions">
+                <button type="button" class="btn btn-primary start-btn" @onclick="StartPractice" disabled="@busy">
+                    @(busy ? "Vragen klaarzetten…" : "Start met oefenen")
+                </button>
+                <span class="small muted">@SeriesText</span>
+            </div>
+        }
+    </section>
+
+    <article class="card theory mt-2" aria-labelledby="theory-h">
+        <h2 id="theory-h" class="theory-title">Theorie</h2>
+        @if (string.IsNullOrWhiteSpace(topic.TheoryMarkdown))
+        {
+            <p class="muted">Er is nog geen theorie voor dit onderwerp.</p>
+        }
+        else
+        {
+            <MarkdownView Text="@topic.TheoryMarkdown" />
+        }
+    </article>
+
+    @if (QuestionCount > 0)
+    {
+        <div class="bottom-actions">
+            <button type="button" class="btn btn-primary btn-block" @onclick="StartPractice" disabled="@busy">Start met oefenen</button>
+        </div>
+    }
+
+    <div class="row between mt-3 footer-links">
+        @if (nextTopic is not null)
+        {
+            <a class="btn btn-ghost" href="onderwerp/@nextTopic.TopicId">Volgende onderwerp: @nextTopic.Name ›</a>
+        }
+        else
+        {
+            <a class="btn btn-ghost" href="vak/@topic.SubjectId">‹ Terug naar @(topic.Subject?.Name ?? "het vak")</a>
+        }
+        @if (info is not null && (info.Answered > 0 || info.Mastery > 0))
+        {
+            <button type="button" class="btn btn-danger btn-sm" @onclick="() => confirmReset = true">Wis je score en begin opnieuw</button>
+        }
+    </div>
+
+    <ConfirmDialog Open="confirmReset" Title="Score wissen?" ConfirmText="Wis mijn score" Danger="true" Busy="busy"
+                   OnConfirm="ResetAsync" OnCancel="() => confirmReset = false">
+        Je score voor <strong>@topic.Name</strong> gaat terug naar 0%. Je begint daarna weer helemaal opnieuw met dit onderwerp.
+    </ConfirmDialog>
+}
+
+@code {
+    [Parameter] public int TopicId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private bool confirmReset;
+    private string? error;
+    private string? actionError;
+    private string? notice;
+    private Topic? topic;
+    private TopicAdvice? info;
+    private TopicAdvice? nextTopic;
+    private int questionCountFallback = -1;
+
+    private double Mastery => info?.Mastery ?? 0;
+    private bool Mastered => info?.Mastered ?? false;
+    private bool NeedsAttention => info?.NeedsAttention ?? false;
+    private int QuestionCount => info?.QuestionCount ?? Math.Max(questionCountFallback, 0);
+
+    private string StatusText => QuestionCount == 0 ? "Nog geen vragen"
+        : Mastered ? "Beheerst – goed gedaan! Blijf af en toe oefenen."
+        : NeedsAttention ? "Hier valt nog winst te halen."
+        : (info?.Answered ?? 0) == 0 ? $"Nog niet geoefend · {LearnUi.QuestionWord(QuestionCount)}"
+        : $"Op weg · beheerst vanaf {LearnUi.Pct(MasteryRules.MasteredThreshold)}";
+
+    private string SeriesText
+    {
+        get
+        {
+            var n = Math.Min(MasteryRules.DefaultSeriesLength, QuestionCount);
+            return $"Een reeks van {LearnUi.QuestionWord(n)} met direct feedback.";
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        error = actionError = notice = null;
+        topic = null;
+        info = nextTopic = null;
+        try
+        {
+            topic = await Content.GetTopicAsync(TopicId);
+            if (topic is not null) await LoadAdviceAsync();
+        }
+        catch (Exception)
+        {
+            error = "Er ging iets mis bij het laden. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadAdviceAsync()
+    {
+        try
+        {
+            var advice = await Practice.GetAdviceAsync(Learner.Id, topic!.SubjectId);
+            var idx = advice.Topics.ToList().FindIndex(t => t.TopicId == TopicId);
+            info = idx >= 0 ? advice.Topics[idx] : null;
+            nextTopic = idx >= 0 ? advice.Topics.Skip(idx + 1).FirstOrDefault(t => t.QuestionCount > 0) : null;
+        }
+        catch (Exception)
+        {
+            // Without advice we can still show the theory; fall back to counting questions.
+            try
+            {
+                var counts = await Content.CountQuestionsPerTopicAsync(topic!.SubjectId);
+                questionCountFallback = counts.GetValueOrDefault(TopicId);
+            }
+            catch (Exception) { questionCountFallback = 0; }
+        }
+    }
+
+    private async Task StartPractice()
+    {
+        if (busy) return;
+        busy = true;
+        actionError = null;
+        try
+        {
+            var attempt = await Practice.StartTopicPracticeAsync(Learner.Id, TopicId);
+            Nav.NavigateTo(LearnUi.PlayerHref(attempt));
+        }
+        catch (Exception ex) { actionError = LearnUi.Message(ex, "De oefenreeks kon niet worden gestart. Probeer het opnieuw."); }
+        finally { busy = false; }
+    }
+
+    private async Task ResetAsync()
+    {
+        if (busy) return;
+        busy = true;
+        actionError = notice = null;
+        try
+        {
+            await Practice.ResetTopicAsync(Learner.Id, TopicId);
+            await LoadAdviceAsync();
+            notice = "Je score is gewist. Succes met opnieuw beginnen!";
+        }
+        catch (Exception ex) { actionError = LearnUi.Message(ex, "Je score kon niet worden gewist. Probeer het opnieuw."); }
+        finally
+        {
+            busy = false;
+            confirmReset = false;
+        }
+    }
+}

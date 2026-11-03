@@ -1,0 +1,8 @@
+.theory-backdrop { animation: st-fade .15s ease-out; }
+.theory-modal { animation: st-sheet .22s cubic-bezier(.22, .9, .3, 1); }
+.theory-modal h2 { margin: 0; }
+.close-x { font-size: 1.1rem; min-width: 44px; min-height: 44px; }
+.theory-footer { position: sticky; bottom: -1.25rem; margin: 1rem -1.25rem -1.25rem; padding: .75rem 1.25rem 1.25rem; background: var(--surface); border-top: 1px solid var(--border); }
+@keyframes st-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes st-sheet { from { transform: translateY(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .theory-backdrop, .theory-modal { animation: none; } }

@@ -1,0 +1,66 @@
+@* Score bar ("scorebalk") 0–100 with a marker at the mastery threshold (80%).
+   Pass From to animate from an earlier value (e.g. PreviousMastery → NewMastery). *@
+
+<div class="sb @(Compact ? "compact" : "") @Class">
+    @if (!string.IsNullOrEmpty(Label) || ShowValue)
+    {
+        <div class="sb-head">
+            @if (!string.IsNullOrEmpty(Label))
+            {
+                <span class="sb-label">@Label</span>
+            }
+            @if (ShowValue)
+            {
+                <span class="score-label sb-value">@LearnUi.Pct(Value)</span>
+            }
+        </div>
+    }
+    <div class="scorebar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Math.Round(Value)"
+         aria-label="@(string.IsNullOrEmpty(Label) ? "Score" : $"Score {Label}")">
+        <div class="scorebar-fill @FillClass" style="width:@LearnUi.Css(displayed)%"></div>
+        <div class="scorebar-target" style="left:@LearnUi.Css(MasteryRules.MasteredThreshold)%" title="Beheerst vanaf @LearnUi.Pct(MasteryRules.MasteredThreshold)"></div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public double Value { get; set; }
+    /// <summary>Optional start value; the bar renders this first and then animates to <see cref="Value"/>.</summary>
+    [Parameter] public double? From { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool ShowValue { get; set; } = true;
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private double displayed;
+    private double? lastValue;
+    private double? lastFrom;
+    private bool animate;
+
+    private string FillClass => LearnUi.Level(displayed) switch { "high" => "high", "mid" => "mid", _ => "" };
+
+    protected override void OnParametersSet()
+    {
+        if (lastValue == Value && lastFrom == From) return;
+        var isNew = lastValue is null;
+        lastValue = Value;
+        lastFrom = From;
+        if (From is double f && Math.Abs(f - Value) > 0.01 && (isNew || Math.Abs(displayed - f) > 0.01))
+        {
+            displayed = f;
+            animate = true;
+        }
+        else
+        {
+            displayed = Value;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!animate) return;
+        animate = false;
+        await Task.Delay(40);
+        displayed = Value;
+        StateHasChanged();
+    }
+}

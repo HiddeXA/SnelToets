@@ -1,0 +1,7 @@
+.sb { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+.sb-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.sb-label { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-value { color: var(--text-2); }
+.sb .scorebar-fill { transition: width .7s cubic-bezier(.22, .9, .3, 1), background-color .4s; }
+.sb.compact .scorebar { height: 8px; }
+@media (prefers-reduced-motion: reduce) { .sb .scorebar-fill { transition: none; } }

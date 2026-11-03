@@ -1,4 +1,222 @@
 @page "/"
-<PageTitle>SnelToets</PageTitle>
-<h1>SnelToets</h1>
-<p class="muted">TODO(student UI agent): dashboard met vakken, scorebalken en studieadvies.</p>
+@inject IContentService Content
+@inject IPracticeService Practice
+@inject ITestService Tests
+@inject LearnerSession Learner
+
+<PageTitle>SnelToets – Oefenen</PageTitle>
+
+<header class="page-header home-hero">
+    <h1>@LearnUi.Greeting()!</h1>
+    <p class="lead">Kies een vak en oefen in je eigen tempo. Je scorebalk laat zien hoe ver je bent.</p>
+</header>
+
+@if (loading)
+{
+    <div class="grid cols-2" aria-busy="true">
+        <div class="card skeleton"></div>
+        <div class="card skeleton"></div>
+    </div>
+}
+else if (error is not null)
+{
+    <div class="alert bad">@error</div>
+}
+else
+{
+    @if (resume.Count > 0)
+    {
+        <section class="mb-2" aria-labelledby="resume-title">
+            <h2 id="resume-title" class="section-title">Verder waar je was</h2>
+            <div class="stack">
+                @foreach (var r in resume)
+                {
+                    <a class="card card-link resume-card" href="@LearnUi.PlayerHref(r.Attempt)">
+                        <span class="resume-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z" /></svg>
+                        </span>
+                        <span class="resume-text">
+                            <span class="resume-title">@r.Title</span>
+                            <span class="small muted">@LearnUi.KindLabel(r.Attempt) · @r.Progress</span>
+                        </span>
+                        <span class="btn btn-primary btn-sm">Verder</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    @if (subjects.Count == 0)
+    {
+        <div class="card empty">
+            <h2>Nog geen vakken</h2>
+            <p>Er zijn nog geen vakken met vragen. Een docent (of AI-assistent) kan vragen toevoegen of een bestand importeren.</p>
+            <a class="btn btn-primary" href="beheer">Vragen toevoegen of importeren</a>
+        </div>
+    }
+    else
+    {
+        <section aria-labelledby="subjects-title">
+            <h2 id="subjects-title" class="section-title">Jouw vakken</h2>
+            <div class="grid cols-2">
+                @foreach (var s in subjects)
+                {
+                    <a class="card card-link subject-card" href="vak/@s.Subject.Id" style="--accent:@(s.Subject.Color ?? "var(--primary)")">
+                        <div class="subject-top">
+                            <span class="subject-dot" aria-hidden="true">@Initial(s.Subject.Name)</span>
+                            <div class="subject-name">
+                                <h3>@s.Subject.Name</h3>
+                                <span class="small muted">
+                                    @(s.TopicCount == 1 ? "1 onderwerp" : $"{s.TopicCount} onderwerpen")
+                                    @if (s.Mastered > 0)
+                                    {
+                                        <text> · @s.Mastered beheerst</text>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(s.Subject.Description))
+                        {
+                            <p class="small muted subject-desc">@s.Subject.Description</p>
+                        }
+                        <ScoreBar Value="s.Average" Label="Voortgang" Compact="true" />
+                        <div class="subject-foot small">
+                            @if (!s.PlacementDone)
+                            {
+                                <span class="badge primary">Begin met de starttoets</span>
+                            }
+                            else if (s.Attention > 0)
+                            {
+                                <span class="badge warn">@s.Attention @(s.Attention == 1 ? "onderwerp" : "onderwerpen") met aandacht</span>
+                            }
+                            else
+                            {
+                                <span class="badge good">Goed bezig</span>
+                            }
+                            <span class="go" aria-hidden="true">›</span>
+                        </div>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    @if (recentResults.Count > 0)
+    {
+        <section class="mt-3" aria-labelledby="results-title">
+            <h2 id="results-title" class="section-title">Laatste resultaten</h2>
+            <div class="card result-list">
+                @foreach (var r in recentResults)
+                {
+                    var pct = r.Attempt.TotalCount == 0 ? 0 : 100.0 * r.Attempt.CorrectCount / r.Attempt.TotalCount;
+                    <a class="result-row" href="resultaat/@r.Attempt.Id">
+                        <span class="result-text">
+                            <span class="resume-title">@r.Title</span>
+                            <span class="small muted">@LearnUi.KindLabel(r.Attempt) · @LearnUi.DateLabel(r.Attempt.FinishedAt ?? r.Attempt.StartedAt)</span>
+                        </span>
+                        <span class="badge @(pct >= r.Attempt.PassPercentage ? "good" : pct >= 50 ? "warn" : "bad")">@LearnUi.Pct(pct)</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+}
+
+@code {
+    private sealed record SubjectRow(Subject Subject, double Average, int TopicCount, int Mastered, int Attention, bool PlacementDone);
+    private sealed record AttemptRow(Attempt Attempt, string Title, string Progress);
+
+    private bool loading = true;
+    private string? error;
+    private List<SubjectRow> subjects = [];
+    private List<AttemptRow> resume = [];
+    private List<AttemptRow> recentResults = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var list = await Content.GetSubjectsAsync();
+            var rows = new List<SubjectRow>();
+            foreach (var s in list)
+            {
+                try
+                {
+                    var advice = await Practice.GetAdviceAsync(Learner.Id, s.Id);
+                    var withQuestions = advice.Topics.Where(t => t.QuestionCount > 0).ToList();
+                    var avg = withQuestions.Count == 0 ? 0 : withQuestions.Average(t => t.Mastery);
+                    rows.Add(new(s, avg, advice.Topics.Count, withQuestions.Count(t => t.Mastered),
+                        withQuestions.Count(t => t.NeedsAttention), advice.PlacementDone));
+                }
+                catch (Exception)
+                {
+                    rows.Add(new(s, 0, s.Topics.Count, 0, 0, true));
+                }
+            }
+            subjects = rows;
+            await LoadAttemptsAsync(list);
+        }
+        catch (Exception)
+        {
+            error = "De vakken konden niet worden geladen. Probeer het later opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadAttemptsAsync(List<Subject> subjectList)
+    {
+        List<Attempt> attempts;
+        try { attempts = await Practice.GetRecentAttemptsAsync(Learner.Id, 10); }
+        catch (Exception) { return; }
+
+        var subjectNames = subjectList.ToDictionary(s => s.Id, s => s.Name);
+        var topicNames = new Dictionary<int, string>();
+        Dictionary<int, string>? testNames = null;
+
+        async Task<string> TitleAsync(Attempt a)
+        {
+            switch (a.Kind)
+            {
+                case AttemptKind.TopicPractice when a.TopicId is int tid:
+                    if (!topicNames.TryGetValue(tid, out var name))
+                    {
+                        try { name = (await Content.GetTopicAsync(tid))?.Name ?? "Onderwerp"; }
+                        catch (Exception) { name = "Onderwerp"; }
+                        topicNames[tid] = name;
+                    }
+                    return name;
+                case AttemptKind.Test:
+                    if (a.Test is not null) return a.Test.Title;
+                    if (a.TestId is int testId)
+                    {
+                        if (testNames is null)
+                        {
+                            try { testNames = (await Tests.GetTestsAsync()).ToDictionary(t => t.Id, t => t.Title); }
+                            catch (Exception) { testNames = []; }
+                        }
+                        if (testNames.TryGetValue(testId, out var title)) return title;
+                    }
+                    return "Toets";
+                default:
+                    return a.SubjectId is int sid && subjectNames.TryGetValue(sid, out var sname) ? sname : LearnUi.KindLabel(a);
+            }
+        }
+
+        string Progress(Attempt a)
+        {
+            var total = a.Items.Count > 0 ? a.Items.Count : a.TotalCount;
+            var answered = a.Items.Count(i => i.AnsweredAt is not null);
+            return total > 0 ? $"{answered} van {total} beantwoord" : "Nog niet begonnen";
+        }
+
+        foreach (var a in attempts.Where(a => a.FinishedAt is null).Take(3))
+            resume.Add(new(a, await TitleAsync(a), Progress(a)));
+        foreach (var a in attempts.Where(a => a.FinishedAt is not null).OrderByDescending(a => a.FinishedAt).Take(4))
+            recentResults.Add(new(a, await TitleAsync(a), ""));
+    }
+
+    private static string Initial(string name) => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpperInvariant();
+}

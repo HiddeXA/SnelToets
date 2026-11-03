@@ -1,0 +1,6 @@
+.timer { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .65rem; border-radius: 999px; background: var(--surface-2); font-weight: 700; font-variant-numeric: tabular-nums; font-size: .95rem; }
+.timer svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.timer.low { background: var(--warn-soft); color: var(--warn); }
+.timer.urgent { background: var(--bad-soft); color: var(--bad); animation: st-blink 1s steps(2, start) infinite; }
+@keyframes st-blink { 50% { opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .timer.urgent { animation: none; } }

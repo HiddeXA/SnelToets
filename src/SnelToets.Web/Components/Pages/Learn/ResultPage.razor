@@ -1,0 +1,300 @@
+@page "/resultaat/{AttemptId:guid}"
+@inject IPracticeService Practice
+@inject IContentService Content
+@inject LearnerSession Learner
+@inject NavigationManager Nav
+
+<PageTitle>Resultaat – SnelToets</PageTitle>
+
+@if (loading)
+{
+    <p class="muted">Resultaat laden…</p>
+}
+else if (attempt is null)
+{
+    <div class="card empty">
+        <h1>Resultaat niet gevonden</h1>
+        <p>@(error ?? "Dit resultaat bestaat niet (meer).")</p>
+        <a class="btn btn-primary" href="">Naar het overzicht</a>
+    </div>
+}
+else if (result is null)
+{
+    <div class="card empty">
+        <h1>Nog niet afgerond</h1>
+        <p>@(error ?? "Je bent nog bezig met deze oefening. Maak hem eerst af om je resultaat te zien.")</p>
+        <a class="btn btn-primary" href="@LearnUi.PlayerHref(attempt)">Ga verder</a>
+    </div>
+}
+else
+{
+    <nav class="breadcrumb" aria-label="Kruimelpad">
+        @if (attempt.Kind == AttemptKind.Test)
+        {
+            <a href="toetsen">Toetsen</a><span class="sep"></span>
+        }
+        else
+        {
+            <a href="">Oefenen</a><span class="sep"></span>
+            @if (subject is not null)
+            {
+                <a href="vak/@subject.Id">@subject.Name</a><span class="sep"></span>
+            }
+        }
+        <span>Resultaat</span>
+    </nav>
+
+    <section class="card hero @HeroClass">
+        <div class="ring" style="--p:@LearnUi.Css(result.Percentage)" role="img" aria-label="@LearnUi.Pct(result.Percentage) goed">
+            <span class="ring-value">@LearnUi.Pct(result.Percentage)</span>
+        </div>
+        <div class="hero-text">
+            <span class="kind">@LearnUi.KindLabel(attempt)@(title is null ? "" : " · " + title)</span>
+            <h1>@Headline</h1>
+            <p class="score-line"><strong>@result.Correct van @result.Total</strong> goed</p>
+            @if (result.Passed is bool passed)
+            {
+                <span class="badge pass @(passed ? "good" : "bad")">
+                    @(passed ? "Geslaagd" : "Niet gehaald") · norm @attempt.PassPercentage%
+                </span>
+            }
+            <p class="muted small hero-sub">@SubLine</p>
+        </div>
+    </section>
+
+    @if (actionError is not null)
+    {
+        <div class="alert bad mt-1" role="alert">@actionError</div>
+    }
+
+    <div class="btn-row mt-2 actions">
+        @if (CanRetry)
+        {
+            <button type="button" class="btn btn-primary" @onclick="RetryAsync" disabled="@busy">@(busy ? "Even geduld…" : RetryLabel)</button>
+        }
+        @if (subject is not null)
+        {
+            <a class="btn" href="vak/@subject.Id">Terug naar vak</a>
+        }
+        else if (attempt.Kind == AttemptKind.Test)
+        {
+            <a class="btn" href="toetsen">Terug naar toetsen</a>
+        }
+    </div>
+
+    @if (result.PerTopic.Count > 0)
+    {
+        <section class="mt-3" aria-labelledby="topics-title">
+            <h2 id="topics-title" class="section-title">Per onderwerp</h2>
+            <div class="card topic-results">
+                @foreach (var t in result.PerTopic)
+                {
+                    <a class="topic-result" href="onderwerp/@t.TopicId">
+                        <div class="tr-head">
+                            <span class="tr-name">@t.TopicName</span>
+                            @if (t.Mastery is double m)
+                            {
+                                <MasteryIcon Mastered="m >= MasteryRules.MasteredThreshold" NeedsAttention="m < MasteryRules.AttentionThreshold" />
+                            }
+                            <span class="spacer"></span>
+                            <span class="small muted">@t.Correct/@t.Total goed</span>
+                        </div>
+                        @if (t.Mastery is double mastery)
+                        {
+                            <ScoreBar Value="mastery" Label="Jouw score" Compact="true" />
+                        }
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    @if (items.Count > 0)
+    {
+        <section class="mt-3" aria-labelledby="review-title">
+            <div class="row between review-head">
+                <h2 id="review-title" class="section-title">Nakijken</h2>
+                @if (WrongCount > 0 && WrongCount < items.Count)
+                {
+                    <div class="seg" role="group" aria-label="Filter">
+                        <button type="button" class="@(onlyWrong ? "" : "on")" aria-pressed="@(!onlyWrong ? "true" : "false")" @onclick="() => onlyWrong = false">Alle (@items.Count)</button>
+                        <button type="button" class="@(onlyWrong ? "on" : "")" aria-pressed="@(onlyWrong ? "true" : "false")" @onclick="() => onlyWrong = true">Fouten (@WrongCount)</button>
+                    </div>
+                }
+            </div>
+            <ol class="review-list">
+                @for (var i = 0; i < items.Count; i++)
+                {
+                    var it = items[i];
+                    var ok = it.IsCorrect == true;
+                    if (onlyWrong && ok) continue;
+                    var fb = ItemFeedback.FromItem(it);
+                    var unanswered = it.AnsweredAt is null;
+                    <li class="review-item @(ok ? "ok" : "no")">
+                        <details open="@(!ok)">
+                            <summary>
+                                <span class="ri-num">@(i + 1)</span>
+                                <span class="ri-prompt">@Plain(it.Question?.Prompt)</span>
+                                <span class="ri-state" aria-label="@(ok ? "goed" : unanswered ? "niet beantwoord" : "fout")">@(ok ? "✓" : "✗")</span>
+                            </summary>
+                            <div class="ri-body">
+                                @if (unanswered)
+                                {
+                                    <p class="small muted not-answered">Je hebt deze vraag niet beantwoord.</p>
+                                }
+                                <QuestionCard Item="it" Selected="LearnUi.ParseIds(it.SelectedOptionIds).ToHashSet()" Text="@it.TextAnswer"
+                                              Locked="true" Feedback="fb" />
+                                <AnswerFeedback Feedback="fb" Item="it" WrongTitle="@(unanswered ? "Niet beantwoord" : "Helaas, dat is niet goed.")"
+                                                OnShowTheory="() => OpenTheoryAsync(it.Question?.TopicId)" />
+                            </div>
+                        </details>
+                    </li>
+                }
+            </ol>
+        </section>
+    }
+
+    <TheoryModal Open="theoryOpen" Title="@theoryTopic?.Name" Markdown="@theoryTopic?.TheoryMarkdown" Loading="theoryLoading"
+                 CloseLabel="Sluiten" OnClose="() => theoryOpen = false" />
+}
+
+@code {
+    [Parameter] public Guid AttemptId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private bool onlyWrong;
+    private string? error;
+    private string? actionError;
+    private Attempt? attempt;
+    private AttemptResult? result;
+    private Subject? subject;
+    private string? title;
+    private List<AttemptItem> items = [];
+
+    private bool theoryOpen;
+    private bool theoryLoading;
+    private Topic? theoryTopic;
+    private readonly Dictionary<int, Topic?> topics = [];
+
+    private int WrongCount => items.Count(i => i.IsCorrect != true);
+
+    private string HeroClass => result is null ? "" :
+        result.Passed == false ? "bad" :
+        result.Percentage >= MasteryRules.MasteredThreshold ? "good" :
+        result.Percentage >= MasteryRules.AttentionThreshold ? "mid" : "bad";
+
+    private string Headline => result is null ? "" :
+        attempt?.Kind == AttemptKind.Placement ? "Starttoets klaar!" :
+        result.Passed == true ? "Gehaald, gefeliciteerd!" :
+        result.Passed == false ? "Nog niet gehaald" :
+        result.Percentage >= 90 ? "Uitstekend!" :
+        result.Percentage >= MasteryRules.MasteredThreshold ? "Goed gedaan!" :
+        result.Percentage >= MasteryRules.AttentionThreshold ? "Je bent op de goede weg" : "Blijf oefenen";
+
+    private string SubLine => attempt?.Kind switch
+    {
+        AttemptKind.Placement => "Je studieadvies staat klaar. Begin met het onderwerp waar de meeste winst te halen valt.",
+        AttemptKind.Test when result?.Passed == false => "Bekijk hieronder de tips bij je fouten en oefen de onderwerpen met een uitroepteken.",
+        _ => WrongCount > 0 ? "Kijk hieronder je fouten na: bij elke fout staat een tip." : "Alles goed. Blijf af en toe oefenen om het vast te houden."
+    };
+
+    private bool CanRetry => attempt?.Kind switch
+    {
+        AttemptKind.TopicPractice => attempt.TopicId is not null,
+        AttemptKind.MixPractice => attempt.SubjectId is not null,
+        AttemptKind.Test => attempt.TestId is not null,
+        _ => false
+    };
+
+    private string RetryLabel => attempt?.Kind == AttemptKind.Test ? "Toets opnieuw maken" : "Opnieuw oefenen";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        attempt = null;
+        result = null;
+        try
+        {
+            var a = await Practice.GetAttemptAsync(AttemptId);
+            if (a is null || (Learner.IsKnown && a.LearnerId != Learner.Id && a.LearnerId != Guid.Empty)) return;
+            attempt = a;
+            items = a.Items.OrderBy(i => i.SortOrder).ThenBy(i => i.Id).ToList();
+            if (a.FinishedAt is null) return;
+
+            // FinishAsync is idempotent; for a finished attempt it only returns the result.
+            result = await Practice.FinishAsync(AttemptId);
+            await LoadContextAsync(a);
+        }
+        catch (Exception ex) { error = LearnUi.Message(ex, "Het resultaat kon niet worden geladen. Probeer het later opnieuw."); }
+        finally { loading = false; }
+    }
+
+    private async Task LoadContextAsync(Attempt a)
+    {
+        try
+        {
+            title = a.Test?.Title;
+            var subjectId = a.SubjectId;
+            if (a.TopicId is int tid && await GetTopicAsync(tid) is { } topic)
+            {
+                title ??= topic.Name;
+                subjectId ??= topic.SubjectId;
+            }
+            if (subjectId is null && a.Kind != AttemptKind.Test && result?.PerTopic.FirstOrDefault() is { } first
+                && await GetTopicAsync(first.TopicId) is { } t2)
+                subjectId = t2.SubjectId;
+            if (subjectId is int sid) subject = await Content.GetSubjectAsync(sid);
+            if (a.Kind is AttemptKind.MixPractice or AttemptKind.Placement) title ??= subject?.Name;
+        }
+        catch (Exception) { /* context is optional */ }
+    }
+
+    private async Task<Topic?> GetTopicAsync(int id)
+    {
+        if (topics.TryGetValue(id, out var t)) return t;
+        try { t = await Content.GetTopicAsync(id); } catch (Exception) { t = null; }
+        topics[id] = t;
+        return t;
+    }
+
+    private async Task OpenTheoryAsync(int? topicId)
+    {
+        if (topicId is not int id) return;
+        theoryOpen = true;
+        theoryLoading = !topics.ContainsKey(id);
+        theoryTopic = topics.GetValueOrDefault(id);
+        StateHasChanged();
+        theoryTopic = await GetTopicAsync(id);
+        theoryLoading = false;
+    }
+
+    private async Task RetryAsync()
+    {
+        if (busy || attempt is null) return;
+        busy = true;
+        actionError = null;
+        try
+        {
+            Attempt next = attempt.Kind switch
+            {
+                AttemptKind.TopicPractice => await Practice.StartTopicPracticeAsync(Learner.Id, attempt.TopicId!.Value),
+                AttemptKind.MixPractice => await Practice.StartMixPracticeAsync(Learner.Id, attempt.SubjectId!.Value),
+                _ => await Practice.StartTestAsync(Learner.Id, attempt.TestId!.Value)
+            };
+            Nav.NavigateTo(LearnUi.PlayerHref(next));
+        }
+        catch (Exception ex) { actionError = LearnUi.Message(ex, "Er kon geen nieuwe oefening worden gestart. Probeer het opnieuw."); }
+        finally { busy = false; }
+    }
+
+    /// <summary>One-line plain-text preview of a Markdown prompt.</summary>
+    private static string Plain(string? markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown)) return "";
+        var s = markdown.Replace("\r", " ").Replace("\n", " ");
+        foreach (var c in new[] { "**", "__", "`", "#", ">", "*", "_" }) s = s.Replace(c, "");
+        s = s.Trim();
+        return s.Length > 140 ? s[..137] + "…" : s;
+    }
+}

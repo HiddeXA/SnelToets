@@ -1,0 +1,73 @@
+@* Countdown to a deadline (UTC). Calls OnExpired once when the time is up. *@
+@implements IDisposable
+
+<div class="timer @Urgency" role="timer" aria-label="Resterende tijd @Display">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2M9 2h6" /></svg>
+    <span>@Display</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public DateTime Deadline { get; set; }
+    [Parameter] public EventCallback OnExpired { get; set; }
+
+    private readonly CancellationTokenSource cts = new();
+    private bool expiredRaised;
+
+    private TimeSpan Remaining
+    {
+        get
+        {
+            var deadline = Deadline.Kind == DateTimeKind.Local ? Deadline.ToUniversalTime() : DateTime.SpecifyKind(Deadline, DateTimeKind.Utc);
+            var r = deadline - DateTime.UtcNow;
+            return r < TimeSpan.Zero ? TimeSpan.Zero : r;
+        }
+    }
+
+    private string Display
+    {
+        get
+        {
+            var r = Remaining;
+            var secs = (int)Math.Ceiling(r.TotalSeconds);
+            var t = TimeSpan.FromSeconds(secs);
+            return t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}" : $"{t.Minutes}:{t.Seconds:00}";
+        }
+    }
+
+    private string Urgency => Remaining.TotalSeconds <= 60 ? "urgent" : Remaining.TotalMinutes <= 5 ? "low" : "";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Only runs in the interactive circuit (not during prerendering).
+        if (firstRender) _ = RunAsync();
+    }
+
+    private async Task RunAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+        try
+        {
+            do
+            {
+                if (Remaining <= TimeSpan.Zero)
+                {
+                    if (!expiredRaised)
+                    {
+                        expiredRaised = true;
+                        await InvokeAsync(() => OnExpired.InvokeAsync());
+                    }
+                    return;
+                }
+                await InvokeAsync(StateHasChanged);
+            } while (await timer.WaitForNextTickAsync(cts.Token));
+        }
+        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { }
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}
