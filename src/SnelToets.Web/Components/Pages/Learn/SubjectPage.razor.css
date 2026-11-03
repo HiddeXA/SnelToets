@@ -17,8 +17,8 @@
 .topic-row { display: flex; flex-direction: column; gap: .45rem; height: 100%; }
 .topic-row.recommended { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) inset, var(--shadow); }
 .topic-row.empty-topic { opacity: .7; }
-.topic-head { display: flex; align-items: center; gap: .45rem; min-width: 0; }
-.topic-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.topic-head { display: flex; align-items: center; flex-wrap: wrap; gap: .45rem; min-width: 0; }
+.topic-name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 
 .mix-card { display: flex; flex-direction: column; gap: .5rem; }
 .mix-card h2 { margin-bottom: .2rem; }

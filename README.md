@@ -58,13 +58,13 @@ het importformaat.
 
 ## Schermafbeeldingen
 
-> _Volgt nog._ Plaats schermafbeeldingen in `docs/img/` en verwijs ernaar vanuit deze sectie, bijvoorbeeld:
->
-> - Dashboard met vakken en scorebalken
-> - Oefenspeler met tip na een fout antwoord
-> - Toets in examenmodus
-> - Beheer: vraag bewerken en importeren
-> - AI-koppeling (`/beheer/ai`)
+| Dashboard | Oefenen: tip na een fout | Toets (feedback na afloop) |
+| --- | --- | --- |
+| ![Dashboard met vakken en voortgang](docs/img/dashboard-mobiel.jpg) | ![Oefenspeler met tip na een fout antwoord](docs/img/oefenen-tip-mobiel.jpg) | ![Toets met overzicht en timer](docs/img/toets-mobiel.jpg) |
+
+![Beheer: onderwerp met theorie en vragen](docs/img/beheer-onderwerp.jpg)
+
+![AI koppelen via MCP](docs/img/ai-koppelen.jpg)
 
 ## Snel starten
 
