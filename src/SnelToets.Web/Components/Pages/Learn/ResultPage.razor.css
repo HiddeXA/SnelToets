@@ -47,3 +47,6 @@ details[open] .ri-prompt { white-space: normal; color: var(--text-2); font-size:
 .no .ri-state { color: var(--bad); }
 .ri-body { padding: 0 1rem 1rem; }
 .not-answered { margin: 0 0 .5rem; }
+
+/* The open card shows the full question; don't repeat the prompt in its summary line. */
+details[open] > summary .ri-prompt { visibility: hidden; }
