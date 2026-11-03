@@ -1,0 +1,1491 @@
+{
+  "version": 1,
+  "subjects": [
+    {
+      "name": "Nederlands – taalverzorging (demo)",
+      "description": "Oefen werkwoordspelling, samenstellingen en zinsbouw op hbo-niveau. Na elke fout krijg je een tip die de regel op die zin toepast. Demo-inhoud van SnelToets.",
+      "color": "#3056d3",
+      "topics": [
+        {
+          "name": "Werkwoordspelling: tegenwoordige tijd",
+          "theory": "## Zo werkt het\nIn de tegenwoordige tijd bepaalt het **onderwerp** hoe je de persoonsvorm schrijft.\n\n| Onderwerp | Vorm | Voorbeelden |\n| --- | --- | --- |\n| ik | stam | ik **werk**, ik **vind**, ik **word** |\n| jij/je, u, hij, zij, het (enkelvoud) | stam + t | jij **werkt**, zij **vindt**, het **wordt** |\n| wij, jullie, zij (meervoud) | hele werkwoord | wij **werken**, jullie **vinden** |\n\n## De stam vinden\nHaal *-en* van het hele werkwoord af en schrijf wat overblijft zoals je het uitspreekt:\n- werken → **werk**, lopen → **loop**, zitten → **zit**\n- v en z worden f en s: leven → **leef**, reizen → **reis**\n- Eindigt de stam al op een **t**, dan komt er geen tweede t bij: hij **zit**, zij **eet**.\n- Eindigt de stam op een **d**, dan komt er wél een t achter: hij **vindt**, het **wordt**. Je hoort het verschil niet, dus vertrouw op de regel.\n\n## Jij/je achter de persoonsvorm\nStaat *jij* of *je* direct **achter** de persoonsvorm (in een vraag of na inversie), dan krijgt de stam **geen t**:\n- **Werk** jij morgen? · **Vind** je dit lastig? · Morgen **word** je opgehaald.\n\nDit geldt alleen voor jij/je. Bij *u* en *hij* blijft de t staan: **Wordt** u al geholpen? **Vindt** hij het goed?\n\n## Valkuil: 'je' in de betekenis van 'jouw'\nSoms betekent *je* hetzelfde als *jouw*: *je broer*, *je fiets*. Dan is *je* niet het onderwerp. Test: **kun je 'je' vervangen door 'jij'?**\n- *Vind je dit mooi?* → *Vind jij dit mooi?* kan → *je* is het onderwerp → geen t.\n- *Vindt je broer dit mooi?* → *Vindt jij broer…* kan niet → het onderwerp is *je broer* (= hij) → stam + t.\n\n## Stappenplan\n1. Zoek de persoonsvorm en het onderwerp.\n2. Bepaal de stam.\n3. ik → stam · jij/je, u, hij, zij, het → stam + t · meervoud → hele werkwoord.\n4. Staat jij/je direct achter de persoonsvorm? Dan valt de t weg.\n",
+          "questions": [
+            {
+              "id": "ww-tt-001",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Hij … elke ochtend de krant. (lezen)",
+              "options": [
+                {
+                  "text": "leest",
+                  "correct": true
+                },
+                {
+                  "text": "lees",
+                  "correct": false,
+                  "feedback": "'Lees' is de ik-vorm. Bij 'hij' komt er een t achter de stam."
+                },
+                {
+                  "text": "leesd",
+                  "correct": false,
+                  "feedback": "Een d schrijf je alleen als die in de stam zit. De stam van lezen is 'lees'."
+                }
+              ],
+              "tip": "Onderwerp is 'hij' → stam + t. De stam van lezen is 'lees' (de z wordt een s) → 'leest'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-002",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "… jij morgen ook naar de presentatie? (komen)",
+              "options": [
+                {
+                  "text": "Kom",
+                  "correct": true
+                },
+                {
+                  "text": "Komt",
+                  "correct": false,
+                  "feedback": "Staat 'jij' direct achter de persoonsvorm, dan valt de t weg."
+                },
+                {
+                  "text": "Komen",
+                  "correct": false,
+                  "feedback": "Het hele werkwoord gebruik je alleen bij een meervoudig onderwerp."
+                }
+              ],
+              "tip": "'Jij' staat direct achter de persoonsvorm → geen t: 'Kom jij'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-003",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Hoe … je dat woord eigenlijk? (spellen)",
+              "options": [
+                {
+                  "text": "spel",
+                  "correct": true
+                },
+                {
+                  "text": "spelt",
+                  "correct": false,
+                  "feedback": "'Je' staat hier achter de persoonsvorm en betekent 'jij': dan valt de t weg."
+                },
+                {
+                  "text": "speld",
+                  "correct": false,
+                  "feedback": "De stam van spellen is 'spel'; er zit geen d in."
+                }
+              ],
+              "tip": "'Je' staat direct achter de persoonsvorm en je kunt het vervangen door 'jij' ('Hoe spel jij…') → geen t: 'spel je'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-tt-004",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "… je zus ook mee naar het feest? (gaan)",
+              "options": [
+                {
+                  "text": "Gaat",
+                  "correct": true
+                },
+                {
+                  "text": "Ga",
+                  "correct": false,
+                  "feedback": "'Je' is hier niet het onderwerp: 'je zus' is het onderwerp (= zij), dus stam + t."
+                }
+              ],
+              "tip": "'Je' kun je hier niet vervangen door 'jij' ('jij zus' kan niet) → 'je zus' is het onderwerp (= zij) → stam + t: 'Gaat je zus'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-tt-005",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "In november … het al vroeg donker. (worden)",
+              "options": [
+                {
+                  "text": "wordt",
+                  "correct": true
+                },
+                {
+                  "text": "word",
+                  "correct": false,
+                  "feedback": "'Word' is de ik-vorm. Bij 'het' komt er een t achter de stam."
+                },
+                {
+                  "text": "wort",
+                  "correct": false,
+                  "feedback": "De stam van worden is 'word'; de d blijft staan en daar komt een t achter."
+                }
+              ],
+              "tip": "Onderwerp is 'het' → stam + t. De stam van worden is 'word' → 'word' + t = 'wordt'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-006",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "… je al geholpen? (worden)",
+              "options": [
+                {
+                  "text": "Word",
+                  "correct": true
+                },
+                {
+                  "text": "Wordt",
+                  "correct": false,
+                  "feedback": "'Je' staat direct achter de persoonsvorm en is het onderwerp: dan geen t."
+                }
+              ],
+              "tip": "'Je' staat direct achter de persoonsvorm en is het onderwerp ('Word jij al geholpen?') → geen t: 'Word je'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-tt-007",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "… u al geholpen? (worden)",
+              "options": [
+                {
+                  "text": "Wordt",
+                  "correct": true
+                },
+                {
+                  "text": "Word",
+                  "correct": false,
+                  "feedback": "De t valt alleen weg bij jij/je achter de persoonsvorm, niet bij 'u'."
+                }
+              ],
+              "tip": "Bij 'u' krijgt de stam altijd een t, ook als 'u' achter de persoonsvorm staat: 'Wordt u'. Alleen bij jij/je valt de t weg.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-tt-008",
+              "type": "true-false",
+              "prompt": "Is de persoonsvorm in deze zin goed gespeld?",
+              "context": "Ik vindt dit een lastige opdracht.",
+              "answer": false,
+              "tip": "Onderwerp is 'ik' → alleen de stam: 'vind'. Goed is: 'Ik vind dit een lastige opdracht.'",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-009",
+              "type": "true-false",
+              "prompt": "Is de persoonsvorm in deze zin goed gespeld?",
+              "context": "Vind jij de theorie ook duidelijk?",
+              "answer": true,
+              "tip": "'Jij' staat direct achter de persoonsvorm → geen t: 'Vind jij' is goed.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-010",
+              "type": "true-false",
+              "prompt": "Is de persoonsvorm in deze zin goed gespeld?",
+              "context": "Wat vindt je moeder van je nieuwe baan?",
+              "answer": true,
+              "tip": "'Je' kun je hier niet vervangen door 'jij' ('jij moeder' kan niet) → 'je moeder' is het onderwerp (= zij) → stam + t: 'vindt'.",
+              "difficulty": 3
+            },
+            {
+              "id": "ww-tt-011",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "De docent … de cijfers vandaag online. (zetten)",
+              "options": [
+                {
+                  "text": "zet",
+                  "correct": true
+                },
+                {
+                  "text": "zett",
+                  "correct": false,
+                  "feedback": "Eindigt de stam al op een t, dan komt er geen tweede t bij."
+                },
+                {
+                  "text": "zetten",
+                  "correct": false,
+                  "feedback": "Het hele werkwoord past alleen bij een meervoudig onderwerp; 'de docent' is enkelvoud."
+                }
+              ],
+              "tip": "Onderwerp is 'de docent' (= hij) → stam + t. De stam 'zet' eindigt al op een t → geen tweede t: 'zet'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-012",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Mijn ouders … een huisje aan de kust. (huren)",
+              "options": [
+                {
+                  "text": "huren",
+                  "correct": true
+                },
+                {
+                  "text": "huurt",
+                  "correct": false,
+                  "feedback": "Stam + t past bij een enkelvoudig onderwerp; 'mijn ouders' is meervoud."
+                },
+                {
+                  "text": "huur",
+                  "correct": false,
+                  "feedback": "Alleen de stam schrijf je bij 'ik' (of bij jij/je achter de persoonsvorm)."
+                }
+              ],
+              "tip": "'Mijn ouders' is meervoud (= zij) → het hele werkwoord: 'huren'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-tt-013",
+              "type": "fill-in",
+              "prompt": "Vul de juiste vorm in van het werkwoord tussen haakjes.",
+              "context": "Waarom … je zo hard? (rennen)",
+              "answers": [
+                "ren"
+              ],
+              "tip": "'Je' staat direct achter de persoonsvorm en is het onderwerp ('Waarom ren jij…') → alleen de stam: 'ren'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-tt-014",
+              "type": "fill-in",
+              "prompt": "Vul de juiste vorm in van het werkwoord tussen haakjes.",
+              "context": "Mijn collega … altijd snel op mijn mails. (antwoorden)",
+              "answers": [
+                "antwoordt"
+              ],
+              "tip": "Onderwerp is 'mijn collega' (enkelvoud) → stam + t. De stam van antwoorden is 'antwoord' → 'antwoordt'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-tt-015",
+              "type": "multiple-select",
+              "prompt": "Welke zinnen zijn goed gespeld? Kies alle juiste zinnen.",
+              "options": [
+                {
+                  "text": "Houd jij je aan de afspraak?",
+                  "correct": true
+                },
+                {
+                  "text": "Wordt je fiets vandaag gerepareerd?",
+                  "correct": true
+                },
+                {
+                  "text": "Vindt je dat ook?",
+                  "correct": false,
+                  "feedback": "Hier betekent 'je' 'jij' en staat het achter de persoonsvorm: 'Vind je dat ook?'"
+                },
+                {
+                  "text": "Hij houd van sterke koffie.",
+                  "correct": false,
+                  "feedback": "Bij 'hij' komt er een t achter de stam: 'Hij houdt van sterke koffie.'"
+                }
+              ],
+              "tip": "Controleer per zin het onderwerp: 'Houd jij' (jij achter de persoonsvorm → geen t), 'Wordt je fiets' (je fiets = hij → t), 'Vind je' (je = jij → geen t), 'Hij houdt' (hij → stam + t).",
+              "difficulty": 3
+            }
+          ]
+        },
+        {
+          "name": "Werkwoordspelling: verleden tijd en voltooid deelwoord",
+          "theory": "## Verleden tijd: 't kofschip\nBij regelmatige (zwakke) werkwoorden kijk je naar de **laatste letter van de stam**.\n- Staat die letter in **'t kofschip** (t, k, f, s, ch, p)? Dan komt er **-te** (enkelvoud) of **-ten** (meervoud) achter: werken → ik **werkte**, wij **werkten** · fietsen → hij **fietste**.\n- Staat die letter er niet in? Dan wordt het **-de** of **-den**: leren → ik **leerde** · wonen → zij **woonden** · eindigen → het **eindigde** (alleen *ch* zit in 't kofschip, de *g* niet).\n\n## Werkwoorden met v of z: kijk naar het hele werkwoord\nIn de stam worden v en z een f en een s. Voor 't kofschip kijk je naar de **v** of **z** in het hele werkwoord, en die staan er niet in:\n- leven → leef → leef**de**, geleef**d**\n- reizen → reis → reis**de**, gereis**d**\n- verven → verf → verf**de**, geverf**d**\n\n## Dubbele letters\nEindigt de stam op een t of d, dan schrijf je die gewoon en zet je de uitgang erachter. Zo ontstaat **tt** of **dd**:\n- wachten → wacht + te → **wachtte** · praten → **praatte**\n- antwoorden → antwoord + de → **antwoordde** · branden → **brandde**\n\n## Voltooid deelwoord\nMeestal *ge-* + stam + **t** of **d**, weer volgens 't kofschip: gewerk**t**, geleer**d**, gefiets**t**.\n- Eindigt de stam al op een t of d, dan komt er niets bij: **geprint**, **gebrand**, **geantwoord**.\n- Begint het werkwoord met een onbeklemtoond voorvoegsel (be-, ge-, her-, ont-, ver-, er-), dan komt er geen *ge-* voor: **bezorgd**, **verplaatst**, **herhaald**.\n- Twijfel je tussen t en d? Maak eerst de verleden tijd: hij fietste → gefiets**t**; hij verhuisde → verhuis**d**.\n\n## Deelwoord vóór een zelfstandig naamwoord\nGebruik je het deelwoord als bijvoeglijk naamwoord, dan komt er vaak een -e achter. De t of d van het deelwoord blijft staan: geverfd → een **geverfde** muur · gepoetst → **gepoetste** schoenen.\n\n## Engelse werkwoorden\nOok hier geldt 't kofschip, maar je kijkt naar de **uitspraak** van de stam:\n- updaten → stam *update* (spreek je uit met een t aan het eind) → **updatete**, **geüpdatet**\n- faxen → stam *fax* (eindigt op een s-klank) → **faxte**, **gefaxt**\n\n## Stappenplan\n1. Bepaal de stam (hele werkwoord min -en).\n2. Laatste letter van de stam in 't kofschip? → -te(n) / -t. Anders → -de(n) / -d. Bij v/z: kijk naar het hele werkwoord.\n3. Meervoud? Zet er een n achter (-ten, -den).\n4. Voltooid deelwoord: ge- + stam + t/d, behalve na be-, ge-, her-, ont-, ver-, er-.\n",
+          "questions": [
+            {
+              "id": "ww-vt-001",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Gisteren … ik de hele avond voor mijn tentamen. (leren)",
+              "options": [
+                {
+                  "text": "leerde",
+                  "correct": true
+                },
+                {
+                  "text": "leerden",
+                  "correct": false,
+                  "feedback": "Een n komt er alleen bij een meervoudig onderwerp achter; 'ik' is enkelvoud."
+                },
+                {
+                  "text": "leerte",
+                  "correct": false,
+                  "feedback": "De r zit niet in 't kofschip, dus geen -te maar -de."
+                }
+              ],
+              "tip": "De stam 'leer' eindigt op een r; die zit niet in 't kofschip → -de. 'Ik' is enkelvoud → 'leerde'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-vt-002",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Vorig jaar … hij elke dag naar zijn werk. (fietsen)",
+              "options": [
+                {
+                  "text": "fietste",
+                  "correct": true
+                },
+                {
+                  "text": "fietsde",
+                  "correct": false,
+                  "feedback": "De s zit in 't kofschip, dus -te."
+                },
+                {
+                  "text": "fietstte",
+                  "correct": false,
+                  "feedback": "De stam 'fiets' eindigt op een s, niet op een t; er komt dus maar één t."
+                }
+              ],
+              "tip": "De stam 'fiets' eindigt op een s; die zit in 't kofschip → -te: 'fietste'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-vt-003",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Mijn zus … vroeger in Utrecht. (wonen)",
+              "options": [
+                {
+                  "text": "woonde",
+                  "correct": true
+                },
+                {
+                  "text": "woonte",
+                  "correct": false,
+                  "feedback": "De n zit niet in 't kofschip, dus -de."
+                },
+                {
+                  "text": "woonden",
+                  "correct": false,
+                  "feedback": "'Mijn zus' is enkelvoud: geen n aan het eind."
+                }
+              ],
+              "tip": "De stam 'woon' eindigt op een n; die zit niet in 't kofschip → -de. 'Mijn zus' is enkelvoud → 'woonde'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-vt-004",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Wij … twee maanden door Zuid-Amerika. (reizen)",
+              "options": [
+                {
+                  "text": "reisden",
+                  "correct": true
+                },
+                {
+                  "text": "reisten",
+                  "correct": false,
+                  "feedback": "De stam eindigt op een s, maar bij werkwoorden met een z kijk je naar het hele werkwoord: reizen."
+                },
+                {
+                  "text": "reizden",
+                  "correct": false,
+                  "feedback": "In de stam wordt de z een s: reis → reisden."
+                }
+              ],
+              "tip": "Bij reizen kijk je naar het hele werkwoord: de z zit niet in 't kofschip → -den. 'Wij' is meervoud → 'reisden'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-vt-005",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Het concert … pas om middernacht. (eindigen)",
+              "options": [
+                {
+                  "text": "eindigde",
+                  "correct": true
+                },
+                {
+                  "text": "eindigte",
+                  "correct": false,
+                  "feedback": "Alleen 'ch' zit in 't kofschip, de g niet. Dus -de."
+                },
+                {
+                  "text": "eindigd",
+                  "correct": false,
+                  "feedback": "Dit is een voltooid deelwoord; in deze zin is een verleden tijd nodig."
+                }
+              ],
+              "tip": "De stam 'eindig' eindigt op een g. Alleen 'ch' zit in 't kofschip, de g niet → -de: 'eindigde'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-vt-006",
+              "type": "multiple-choice",
+              "prompt": "Welk voltooid deelwoord is juist?",
+              "context": "De afspraak is helaas … (verplaatsen)",
+              "options": [
+                {
+                  "text": "verplaatst",
+                  "correct": true
+                },
+                {
+                  "text": "verplaatsd",
+                  "correct": false,
+                  "feedback": "De s zit in 't kofschip, dus het deelwoord eindigt op een t."
+                },
+                {
+                  "text": "geverplaatst",
+                  "correct": false,
+                  "feedback": "Na het voorvoegsel ver- komt er geen ge- voor het deelwoord."
+                }
+              ],
+              "tip": "De stam 'verplaats' eindigt op een s → in 't kofschip → deelwoord op t: 'verplaatst'. Ver- is een voorvoegsel, dus geen ge-.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-vt-007",
+              "type": "multiple-choice",
+              "prompt": "Welk voltooid deelwoord is juist?",
+              "context": "Ik heb de documenten gisteren al … (printen)",
+              "options": [
+                {
+                  "text": "geprint",
+                  "correct": true
+                },
+                {
+                  "text": "geprintt",
+                  "correct": false,
+                  "feedback": "Eindigt de stam al op een t, dan komt er geen tweede t bij."
+                },
+                {
+                  "text": "geprind",
+                  "correct": false,
+                  "feedback": "De stam 'print' eindigt op een t; die blijft gewoon staan."
+                }
+              ],
+              "tip": "De stam 'print' eindigt al op een t → er komt niets bij: 'geprint'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-vt-008",
+              "type": "multiple-choice",
+              "prompt": "Welk voltooid deelwoord is juist?",
+              "context": "Heeft u het formulier al …? (ondertekenen)",
+              "options": [
+                {
+                  "text": "ondertekend",
+                  "correct": true
+                },
+                {
+                  "text": "ondertekent",
+                  "correct": false,
+                  "feedback": "Dit is de tegenwoordige tijd (hij ondertekent). Na 'heeft' volgt een voltooid deelwoord."
+                },
+                {
+                  "text": "geondertekend",
+                  "correct": false,
+                  "feedback": "Bij ondertekenen ligt de klemtoon op 'te'; zo'n werkwoord krijgt geen ge- in het deelwoord."
+                }
+              ],
+              "tip": "De stam 'onderteken' eindigt op een n → niet in 't kofschip → deelwoord op d: 'ondertekend'. Ondertekenen is onscheidbaar, dus geen ge-.",
+              "difficulty": 3
+            },
+            {
+              "id": "ww-vt-009",
+              "type": "multiple-choice",
+              "prompt": "Welke vorm is juist?",
+              "context": "Achter het huis staat een pas … schutting. (verven)",
+              "options": [
+                {
+                  "text": "geverfde",
+                  "correct": true
+                },
+                {
+                  "text": "geverfte",
+                  "correct": false,
+                  "feedback": "Bij verven kijk je naar de v van het hele werkwoord: die zit niet in 't kofschip → geverfd → geverfde."
+                },
+                {
+                  "text": "geverfd",
+                  "correct": false,
+                  "feedback": "Voor 'schutting' (een de-woord) komt er een e achter het deelwoord."
+                }
+              ],
+              "tip": "Het hele werkwoord verven heeft een v; die zit niet in 't kofschip → geverfd. Voor 'schutting' komt er een e achter: 'geverfde'.",
+              "difficulty": 3
+            },
+            {
+              "id": "ww-vt-010",
+              "type": "multiple-choice",
+              "prompt": "Welk voltooid deelwoord is juist?",
+              "context": "Ik heb die app gisteren nog … (updaten)",
+              "options": [
+                {
+                  "text": "geüpdatet",
+                  "correct": true
+                },
+                {
+                  "text": "geüpdated",
+                  "correct": false,
+                  "feedback": "Dat is een Engelse spelling. In het Nederlands volg je 't kofschip: de stam eindigt op een t-klank → t."
+                },
+                {
+                  "text": "geupdate",
+                  "correct": false,
+                  "feedback": "Er hoort een t aan het eind en een trema op de u, zodat je niet 'eu' leest."
+                }
+              ],
+              "tip": "De stam 'update' eindigt in de uitspraak op een t → deelwoord op t: 'geüpdatet'. Het trema voorkomt dat je 'eu' leest.",
+              "difficulty": 3
+            },
+            {
+              "id": "ww-vt-011",
+              "type": "true-false",
+              "prompt": "Is de persoonsvorm in deze zin goed gespeld?",
+              "context": "Gisteren antwoorde ik meteen op zijn mail.",
+              "answer": false,
+              "tip": "De stam 'antwoord' eindigt op een d → niet in 't kofschip → stam + de: 'antwoordde' (met dd).",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-vt-012",
+              "type": "true-false",
+              "prompt": "Is het voltooid deelwoord in deze zin goed gespeld?",
+              "context": "De wedstrijd werd vanwege de regen uitgesteld.",
+              "answer": true,
+              "tip": "De stam 'stel' eindigt op een l → niet in 't kofschip → deelwoord op d: 'uitgesteld'.",
+              "difficulty": 1
+            },
+            {
+              "id": "ww-vt-013",
+              "type": "true-false",
+              "prompt": "Is de persoonsvorm in deze zin goed gespeld?",
+              "context": "Hij beantwoorde alle vragen binnen een kwartier.",
+              "answer": false,
+              "tip": "De stam 'beantwoord' eindigt op een d → stam + de: 'beantwoordde'.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-vt-014",
+              "type": "fill-in",
+              "prompt": "Vul de verleden tijd in van het werkwoord tussen haakjes.",
+              "context": "Wij … de hele middag op de bus. (wachten)",
+              "answers": [
+                "wachtten"
+              ],
+              "tip": "De stam 'wacht' eindigt op een t → in 't kofschip → stam + ten (meervoud): 'wachtten', met tt.",
+              "difficulty": 2
+            },
+            {
+              "id": "ww-vt-015",
+              "type": "fill-in",
+              "prompt": "Vul het voltooid deelwoord in van het werkwoord tussen haakjes.",
+              "context": "Het pakketje is gisteren … (bezorgen)",
+              "answers": [
+                "bezorgd"
+              ],
+              "tip": "De stam 'bezorg' eindigt op een g → niet in 't kofschip → d: 'bezorgd'. Be- is een voorvoegsel, dus geen ge-.",
+              "difficulty": 2
+            }
+          ]
+        },
+        {
+          "name": "Spelling: samenstellingen, tussen-s en streepjes",
+          "theory": "## Samenstellingen schrijf je aan elkaar\nEen samenstelling is één woord dat uit twee of meer woorden bestaat: *computer* + *scherm* = **computerscherm**. Je schrijft het aan elkaar, hoe lang het ook wordt: **studentenvereniging**, **aanmeldingsformulier**.\n\n## De tussen-s: schrijf wat je hoort\nHoor je een s tussen de delen, dan schrijf je die. Hoor je geen s, dan schrijf je ook geen s.\n- stad + bestuur → **stadsbestuur** · leven + verzekering → **levensverzekering** · arbeid + markt → **arbeidsmarkt**\n- rij + bewijs → **rijbewijs** · vakantie + werk → **vakantiewerk**\n- Begint het tweede deel met een s, dan krijg je **ss**: veiligheid + s + schoenen → **veiligheidsschoenen**.\n\n## De tussenklank: -e- of -en-?\n- Schrijf **-en-** als het eerste deel een meervoud heeft dat alleen op -en eindigt: **pannenkoek** (pannen), **boekenkast** (boeken).\n- Schrijf **-e-** als het eerste deel uniek is of geen meervoud heeft: **zonnebril** (er is maar één zon).\n- Schrijf ook **-e-** als het meervoud op -en én op -s kan: **gedachtegang** (gedachten/gedachtes).\n\n## Het koppelteken (streepje)\nIn een gewone samenstelling komt **geen** streepje: *computerscherm*, *kinderboek*. Je gebruikt wel een koppelteken bij:\n1. **Klinkerbotsing**: de klinkers aan weerszijden zouden samen verkeerd gelezen worden. **auto-ongeluk** (niet 'oo' zoals in boot), **zee-egel**, **politie-inval** (niet 'ei'), **foto-opdracht**.\n2. **Een afkorting, letter of cijfer** in de samenstelling: **tv-programma**, **pdf-bestand**, **hbo-opleiding**, **btw-nummer**.\n3. **Gelijkwaardige delen** (iets of iemand is allebei): **eigenaar-directeur**, **zwart-witfoto**.\n\n## Het weglatingsstreepje\nLaat je een deel van een samenstelling weg omdat het verderop al staat, dan zet je op die plek een streepje:\n- **in- en verkopers** (= inkopers en verkopers)\n- **zomer- en wintertijd** · **hoofd- en bijzaken**\n\n## Stappenplan\n1. Is het één begrip? Schrijf het aan elkaar.\n2. Hoor je een s tussen de delen? Schrijf die s.\n3. Afkorting, cijfer, klinkerbotsing of gelijkwaardige delen? Dan een koppelteken.\n4. Is er een deel weggelaten? Dan een weglatingsstreepje.\n",
+          "questions": [
+            {
+              "id": "spl-001",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "arbeidsmarkt",
+                  "correct": true
+                },
+                {
+                  "text": "arbeidmarkt",
+                  "correct": false,
+                  "feedback": "Je hoort een s tussen 'arbeid' en 'markt', dus die schrijf je ook."
+                },
+                {
+                  "text": "arbeids-markt",
+                  "correct": false,
+                  "feedback": "Een gewone samenstelling krijgt geen streepje."
+                }
+              ],
+              "tip": "Je hoort een s tussen 'arbeid' en 'markt' → schrijf de s. Een samenstelling schrijf je aan elkaar: 'arbeidsmarkt'.",
+              "difficulty": 1
+            },
+            {
+              "id": "spl-002",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "veiligheidsschoenen",
+                  "correct": true
+                },
+                {
+                  "text": "veiligheidschoenen",
+                  "correct": false,
+                  "feedback": "De tussen-s hoort erbij, ook als het tweede deel met een s begint: dan krijg je ss."
+                },
+                {
+                  "text": "veiligheids-schoenen",
+                  "correct": false,
+                  "feedback": "Er is geen klinkerbotsing en geen afkorting, dus geen streepje."
+                }
+              ],
+              "tip": "Veiligheid + s + schoenen: de tussen-s schrijf je ook als het tweede deel al met een s begint → 'veiligheidsschoenen' (met ss).",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-003",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "auto-ongeluk",
+                  "correct": true
+                },
+                {
+                  "text": "autoongeluk",
+                  "correct": false,
+                  "feedback": "Aan elkaar zou je 'oo' lezen, zoals in 'boot'. Daarom komt er een koppelteken."
+                },
+                {
+                  "text": "auto ongeluk",
+                  "correct": false,
+                  "feedback": "Een samenstelling schrijf je nooit los."
+                }
+              ],
+              "tip": "'Auto' eindigt op een o en 'ongeluk' begint met een o. Aan elkaar zou je 'oo' lezen → klinkerbotsing → koppelteken: 'auto-ongeluk'.",
+              "difficulty": 1
+            },
+            {
+              "id": "spl-004",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "tv-programma",
+                  "correct": true
+                },
+                {
+                  "text": "tvprogramma",
+                  "correct": false,
+                  "feedback": "Na een afkorting zet je in een samenstelling een koppelteken."
+                },
+                {
+                  "text": "tv programma",
+                  "correct": false,
+                  "feedback": "Een samenstelling schrijf je niet los; met een afkorting komt er een koppelteken."
+                }
+              ],
+              "tip": "'Tv' is een afkorting. Een samenstelling met een afkorting krijgt een koppelteken: 'tv-programma'.",
+              "difficulty": 1
+            },
+            {
+              "id": "spl-005",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "pannenkoek",
+                  "correct": true
+                },
+                {
+                  "text": "pannekoek",
+                  "correct": false,
+                  "feedback": "Het meervoud van 'pan' is alleen 'pannen', dus schrijf je -en-."
+                },
+                {
+                  "text": "pannen-koek",
+                  "correct": false,
+                  "feedback": "Een gewone samenstelling krijgt geen streepje."
+                }
+              ],
+              "tip": "Het meervoud van 'pan' is alleen 'pannen' → tussenklank -en-: 'pannenkoek'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-006",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "zonnebril",
+                  "correct": true
+                },
+                {
+                  "text": "zonnenbril",
+                  "correct": false,
+                  "feedback": "Er is maar één zon; bij een uniek eerste deel schrijf je -e-."
+                },
+                {
+                  "text": "zonne-bril",
+                  "correct": false,
+                  "feedback": "Een gewone samenstelling krijgt geen streepje."
+                }
+              ],
+              "tip": "Er is maar één zon (het eerste deel is uniek) → tussenklank -e-: 'zonnebril'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-007",
+              "type": "multiple-choice",
+              "prompt": "Welke zin is goed gespeld?",
+              "options": [
+                {
+                  "text": "Op deze afdeling werken alleen in- en verkopers.",
+                  "correct": true
+                },
+                {
+                  "text": "Op deze afdeling werken alleen in en verkopers.",
+                  "correct": false,
+                  "feedback": "Bij 'in' is 'kopers' weggelaten; dat geef je aan met een weglatingsstreepje."
+                },
+                {
+                  "text": "Op deze afdeling werken alleen in- en -verkopers.",
+                  "correct": false,
+                  "feedback": "Het streepje komt alleen op de plek waar iets is weggelaten: na 'in'."
+                }
+              ],
+              "tip": "Er staat eigenlijk 'inkopers en verkopers'. Bij 'in' laat je 'kopers' weg → weglatingsstreepje: 'in- en verkopers'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-008",
+              "type": "multiple-choice",
+              "prompt": "Welk woord is goed gespeld?",
+              "options": [
+                {
+                  "text": "politie-inval",
+                  "correct": true
+                },
+                {
+                  "text": "politieinval",
+                  "correct": false,
+                  "feedback": "Aan elkaar zou je 'ei' lezen; daarom komt er een koppelteken."
+                },
+                {
+                  "text": "politie inval",
+                  "correct": false,
+                  "feedback": "Een samenstelling schrijf je niet los."
+                }
+              ],
+              "tip": "'Politie' eindigt op een e en 'inval' begint met een i. Aan elkaar zou je 'ei' lezen → klinkerbotsing → koppelteken: 'politie-inval'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-009",
+              "type": "true-false",
+              "prompt": "Is deze zin goed gespeld?",
+              "context": "Mijn broer volgt een hbo-opleiding tot verpleegkundige.",
+              "answer": true,
+              "tip": "'Hbo' is een afkorting → in een samenstelling een koppelteken: 'hbo-opleiding'.",
+              "difficulty": 1
+            },
+            {
+              "id": "spl-010",
+              "type": "true-false",
+              "prompt": "Is deze zin goed gespeld?",
+              "context": "Het stadbestuur heeft een nieuw plan gepresenteerd.",
+              "answer": false,
+              "tip": "Je hoort een s tussen 'stad' en 'bestuur' → schrijf de s: 'stadsbestuur'.",
+              "difficulty": 1
+            },
+            {
+              "id": "spl-011",
+              "type": "true-false",
+              "prompt": "Is deze zin goed gespeld?",
+              "context": "Ze is eigenaar-directeur van een klein bedrijf.",
+              "answer": true,
+              "tip": "'Eigenaar' en 'directeur' zijn gelijkwaardig: ze is allebei → koppelteken: 'eigenaar-directeur'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-012",
+              "type": "true-false",
+              "prompt": "Is deze zin goed gespeld?",
+              "context": "Ik heb mijn levenverzekering opgezegd.",
+              "answer": false,
+              "tip": "Je hoort een s tussen 'leven' en 'verzekering' → 'levensverzekering'.",
+              "difficulty": 1
+            },
+            {
+              "id": "spl-013",
+              "type": "fill-in",
+              "prompt": "Schrijf 'zee' en 'egel' als één samenstelling.",
+              "context": "Op het strand vonden we een … (zee + egel)",
+              "answers": [
+                "zee-egel"
+              ],
+              "tip": "'Zee' eindigt op ee en 'egel' begint met een e: aan elkaar krijg je 'eee' → klinkerbotsing → koppelteken: 'zee-egel'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-014",
+              "type": "fill-in",
+              "prompt": "Schrijf de twee woorden als één samenstelling.",
+              "context": "Vul eerst het … in. (aanmelding + formulier)",
+              "answers": [
+                "aanmeldingsformulier"
+              ],
+              "tip": "Je hoort een s tussen 'aanmelding' en 'formulier' → schrijf de s en schrijf alles aan elkaar: 'aanmeldingsformulier'.",
+              "difficulty": 2
+            },
+            {
+              "id": "spl-015",
+              "type": "multiple-select",
+              "prompt": "Welke woorden zijn goed gespeld? Kies alle juiste woorden.",
+              "options": [
+                {
+                  "text": "pdf-bestand",
+                  "correct": true
+                },
+                {
+                  "text": "zwart-witfoto",
+                  "correct": true
+                },
+                {
+                  "text": "computer-scherm",
+                  "correct": false,
+                  "feedback": "Een gewone samenstelling zonder afkorting of klinkerbotsing schrijf je aan elkaar: computerscherm."
+                },
+                {
+                  "text": "kinder-boek",
+                  "correct": false,
+                  "feedback": "Gewone samenstelling: aan elkaar, dus kinderboek."
+                }
+              ],
+              "tip": "Een koppelteken komt er alleen bij een afkorting ('pdf-bestand'), gelijkwaardige delen ('zwart-wit') of klinkerbotsing. 'Computerscherm' en 'kinderboek' schrijf je aan elkaar.",
+              "difficulty": 3
+            }
+          ]
+        },
+        {
+          "name": "Zinsbouw en verwijswoorden",
+          "theory": "## Die, dat of wat?\n- **de-woord** → *die*: de opdracht **die** je maakt\n- **het-woord** → *dat*: het rapport **dat** je schrijft\n- **meervoud** → altijd *die*: de rapporten **die** je schrijft\n- *wat* gebruik je na **alles, iets, niets, veel** en **weinig**, en als je naar een **hele zin** verwijst: *Alles **wat** je leert, komt terug.* · *Hij kwam weer te laat, **wat** iedereen irriteerde.*\n\n## Wie of waar + voorzetsel\n- Een **persoon** met een voorzetsel ervoor: voorzetsel + *wie*: de docent **met wie** ik sprak.\n- Een **zaak**: *waar* + voorzetsel: de laptop **waarop** ik werk, het project **waaraan** we werken.\n\n## Zij, hen of hun?\n- **zij** (ze) is onderwerp: ***Zij** hebben de presentatie gegeven.*\n- **hen** gebruik je na een voorzetsel en als lijdend voorwerp: *met **hen***, *ik heb **hen** gebeld*.\n- **hun** gebruik je als meewerkend voorwerp zonder *aan* of *voor*: *Ik stuur **hun** een mail.* En als bezittelijk voornaamwoord: ***hun** huis*.\n- *Hun* als onderwerp (*Hun hebben…*) is altijd fout.\n\n## Zijn of haar?\nVerwijs je naar een organisatie, kijk dan naar het woord: **het** bedrijf → **zijn** klanten; **de** gemeente → **haar** inwoners. Een enkelvoudig woord krijgt nooit *hun*.\n\n## Enkelvoud of meervoud?\n*Iedereen*, *niemand* en *elk(e)* zijn enkelvoud: *Iedereen **heeft** een cijfer gekregen.*\n\n## Zinnen die niet kloppen\n- **Beknopte bijzin**: het onderwerp van de hoofdzin moet ook de handeling uit de beknopte bijzin uitvoeren. Fout: *Thuisgekomen ging de telefoon.* Goed: *Toen ik thuiskwam, ging de telefoon.*\n- **Foute samentrekking**: je mag een zinsdeel maar één keer schrijven als het in beide delen van de zin dezelfde functie heeft. Fout: *Ik heb je bericht gelezen en wordt morgen beantwoord.* Goed: *Ik heb je bericht gelezen; het wordt morgen beantwoord.*\n\n## Stappenplan\n1. Zoek het woord waarnaar verwezen wordt.\n2. Is het een de-woord, een het-woord, een meervoud, een persoon, een zaak of een hele zin?\n3. Kies het verwijswoord dat daarbij hoort.\n",
+          "questions": [
+            {
+              "id": "zin-001",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de puntjes?",
+              "context": "Het rapport … je gisteren hebt ingeleverd, is goedgekeurd.",
+              "options": [
+                {
+                  "text": "dat",
+                  "correct": true
+                },
+                {
+                  "text": "die",
+                  "correct": false,
+                  "feedback": "'Die' gebruik je bij de-woorden en meervoud; het is 'het rapport'."
+                },
+                {
+                  "text": "wat",
+                  "correct": false,
+                  "feedback": "'Wat' gebruik je na woorden als alles en iets, of als je naar een hele zin verwijst."
+                }
+              ],
+              "tip": "'Rapport' is een het-woord (het rapport) → verwijswoord 'dat'.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-002",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de puntjes?",
+              "context": "De opdracht … we vandaag krijgen, telt mee voor het eindcijfer.",
+              "options": [
+                {
+                  "text": "die",
+                  "correct": true
+                },
+                {
+                  "text": "dat",
+                  "correct": false,
+                  "feedback": "'Dat' gebruik je bij het-woorden; het is 'de opdracht'."
+                },
+                {
+                  "text": "wat",
+                  "correct": false,
+                  "feedback": "'Wat' verwijst niet naar een gewoon zelfstandig naamwoord als 'opdracht'."
+                }
+              ],
+              "tip": "'Opdracht' is een de-woord (de opdracht) → verwijswoord 'die'.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-003",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de puntjes?",
+              "context": "Alles … je in deze les leert, komt terug op de toets.",
+              "options": [
+                {
+                  "text": "wat",
+                  "correct": true
+                },
+                {
+                  "text": "dat",
+                  "correct": false,
+                  "feedback": "Na 'alles' gebruik je 'wat', niet 'dat'."
+                },
+                {
+                  "text": "die",
+                  "correct": false,
+                  "feedback": "Na 'alles' gebruik je 'wat'."
+                }
+              ],
+              "tip": "Na 'alles' (net als na iets, niets, veel en weinig) gebruik je 'wat': 'Alles wat je leert'.",
+              "difficulty": 2
+            },
+            {
+              "id": "zin-004",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de plaats van 'de klanten'?",
+              "context": "Ik heb … gisteren nog een mail gestuurd. (de klanten)",
+              "options": [
+                {
+                  "text": "hun",
+                  "correct": true
+                },
+                {
+                  "text": "hen",
+                  "correct": false,
+                  "feedback": "'Hen' gebruik je na een voorzetsel ('aan hen'); zonder voorzetsel wordt het 'hun'."
+                },
+                {
+                  "text": "zij",
+                  "correct": false,
+                  "feedback": "'Zij' is een onderwerp; hier zijn de klanten niet degenen die iets doen."
+                }
+              ],
+              "tip": "Je stuurt de mail áán de klanten: meewerkend voorwerp zonder 'aan' → 'hun'. Met voorzetsel zou het 'aan hen' zijn.",
+              "difficulty": 2
+            },
+            {
+              "id": "zin-005",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de plaats van 'mijn teamgenoten'?",
+              "context": "Ik heb lang met … gepraat over het project. (mijn teamgenoten)",
+              "options": [
+                {
+                  "text": "hen",
+                  "correct": true
+                },
+                {
+                  "text": "hun",
+                  "correct": false,
+                  "feedback": "Na een voorzetsel gebruik je 'hen', niet 'hun'."
+                },
+                {
+                  "text": "zij",
+                  "correct": false,
+                  "feedback": "Na een voorzetsel kan 'zij' niet."
+                }
+              ],
+              "tip": "Na een voorzetsel ('met') gebruik je 'hen': 'met hen'.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-006",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de plaats van 'de studenten'?",
+              "context": "… hebben de opdracht al ingeleverd. (de studenten)",
+              "options": [
+                {
+                  "text": "Zij",
+                  "correct": true
+                },
+                {
+                  "text": "Hun",
+                  "correct": false,
+                  "feedback": "'Hun' kan nooit onderwerp zijn."
+                },
+                {
+                  "text": "Hen",
+                  "correct": false,
+                  "feedback": "'Hen' is geen onderwerp; het staat na een voorzetsel of is lijdend voorwerp."
+                }
+              ],
+              "tip": "Wie hebben de opdracht ingeleverd? De studenten → het woord is onderwerp → 'Zij'. 'Hun' als onderwerp is fout.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-007",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de puntjes?",
+              "context": "Het bedrijf heeft gisteren … jaarcijfers gepubliceerd.",
+              "options": [
+                {
+                  "text": "zijn",
+                  "correct": true
+                },
+                {
+                  "text": "haar",
+                  "correct": false,
+                  "feedback": "'Het bedrijf' is een het-woord; daarbij gebruik je 'zijn'."
+                },
+                {
+                  "text": "hun",
+                  "correct": false,
+                  "feedback": "'Hun' verwijst naar een meervoud; 'het bedrijf' is enkelvoud."
+                }
+              ],
+              "tip": "'Het bedrijf' is een het-woord en enkelvoud → 'zijn': 'Het bedrijf heeft zijn jaarcijfers gepubliceerd'.",
+              "difficulty": 2
+            },
+            {
+              "id": "zin-008",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de puntjes?",
+              "context": "De man met … ik gisteren sprak, is mijn nieuwe stagebegeleider.",
+              "options": [
+                {
+                  "text": "wie",
+                  "correct": true
+                },
+                {
+                  "text": "die",
+                  "correct": false,
+                  "feedback": "Na een voorzetsel gebruik je voor een persoon 'wie': 'met wie'."
+                },
+                {
+                  "text": "wat",
+                  "correct": false,
+                  "feedback": "'Wat' gebruik je niet voor een persoon."
+                }
+              ],
+              "tip": "Na een voorzetsel ('met') gebruik je voor een persoon 'wie': 'de man met wie'.",
+              "difficulty": 2
+            },
+            {
+              "id": "zin-009",
+              "type": "multiple-choice",
+              "prompt": "Welk woord hoort op de puntjes?",
+              "context": "Dit is de laptop … ik mijn scriptie heb geschreven.",
+              "options": [
+                {
+                  "text": "waarop",
+                  "correct": true
+                },
+                {
+                  "text": "op wie",
+                  "correct": false,
+                  "feedback": "'Wie' gebruik je alleen voor personen; een laptop is een zaak."
+                },
+                {
+                  "text": "op die",
+                  "correct": false,
+                  "feedback": "Na een voorzetsel verwijs je naar een zaak met 'waar' + voorzetsel."
+                }
+              ],
+              "tip": "Een laptop is een zaak. Na een voorzetsel wordt het dan 'waar' + voorzetsel: 'op de laptop' → 'waarop'.",
+              "difficulty": 2
+            },
+            {
+              "id": "zin-010",
+              "type": "true-false",
+              "prompt": "Is deze zin correct?",
+              "context": "Thuisgekomen ging meteen de telefoon.",
+              "answer": false,
+              "tip": "Het onderwerp van de hoofdzin ('de telefoon') kwam niet thuis → de beknopte bijzin klopt niet. Beter: 'Toen ik thuiskwam, ging meteen de telefoon.'",
+              "difficulty": 3
+            },
+            {
+              "id": "zin-011",
+              "type": "true-false",
+              "prompt": "Is deze zin correct?",
+              "context": "Ik heb je bericht gelezen en wordt morgen beantwoord.",
+              "answer": false,
+              "tip": "Foute samentrekking: 'ik' is onderwerp van 'heb gelezen', maar 'je bericht' is onderwerp van 'wordt beantwoord'. Beter: 'Ik heb je bericht gelezen; het wordt morgen beantwoord.'",
+              "difficulty": 3
+            },
+            {
+              "id": "zin-012",
+              "type": "true-false",
+              "prompt": "Is deze zin correct?",
+              "context": "Iedereen die zich heeft aangemeld, krijgt vandaag een bevestiging.",
+              "answer": true,
+              "tip": "'Iedereen' is enkelvoud → 'heeft' en 'krijgt'. 'Die' verwijst naar 'iedereen' (personen). De zin klopt.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-013",
+              "type": "true-false",
+              "prompt": "Is deze zin correct?",
+              "context": "Hun hebben gisteren de presentatie gegeven.",
+              "answer": false,
+              "tip": "Wie hebben de presentatie gegeven? Dat is het onderwerp, en 'hun' kan nooit onderwerp zijn → 'Zij hebben…'.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-014",
+              "type": "fill-in",
+              "prompt": "Vul het juiste verwijswoord in: die, dat of wat.",
+              "context": "Het onderwerp … je hebt gekozen, is erg actueel.",
+              "answers": [
+                "dat"
+              ],
+              "tip": "'Onderwerp' is een het-woord (het onderwerp) → 'dat'.",
+              "difficulty": 1
+            },
+            {
+              "id": "zin-015",
+              "type": "fill-in",
+              "prompt": "Vul het juiste verwijswoord in: die, dat of wat.",
+              "context": "Hij kwam weer te laat, … iedereen irriteerde.",
+              "answers": [
+                "wat"
+              ],
+              "tip": "Het verwijswoord slaat op de hele zin ervoor (dat hij te laat kwam), niet op één woord → 'wat'.",
+              "difficulty": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Engels – grammar basics (demo)",
+      "description": "Basic English grammar: present simple vs. present continuous and some/any/much/many. Demo-inhoud van SnelToets.",
+      "color": "#0f9d74",
+      "topics": [
+        {
+          "name": "Present simple and present continuous",
+          "theory": "## Present simple\nUse the present simple for **habits, routines and facts**.\n- *She **works** in Utrecht.* · *Water **boils** at 100 °C.*\n- With **he/she/it** the verb gets **-s** (after -ch, -sh, -s, -x, -o: **-es**): *he watches, she goes*.\n- Questions and negatives with **do/does**: *Does he work here? He doesn't like coffee.* (no -s after does/doesn't)\n- Signal words: *always, usually, often, sometimes, never, every day*.\n\n## Present continuous\nUse **am/is/are + -ing** for things happening **now** or **temporarily**.\n- *I **am studying** right now.* · *She **is staying** with friends this week.*\n- Signal words: *now, at the moment, Look!, Listen!, this week*.\n\n## Stative verbs\nVerbs about thinking, feeling and owning are normally **not** used in the continuous form: *know, understand, like, want, believe, need, own*.\n- *I **understand** what you mean.* (not *I am understanding*)\n\n> Tip (NL): Gewoonte of feit → present simple. Nu of tijdelijk → present continuous.\n",
+          "questions": [
+            {
+              "id": "en-ps-001",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct form.",
+              "context": "She … to the gym every Tuesday.",
+              "options": [
+                {
+                  "text": "goes",
+                  "correct": true
+                },
+                {
+                  "text": "is going",
+                  "correct": false,
+                  "feedback": "'Every Tuesday' is een gewoonte; dan gebruik je de present simple."
+                },
+                {
+                  "text": "go",
+                  "correct": false,
+                  "feedback": "Bij she/he/it krijgt het werkwoord in de present simple een -s (go → goes)."
+                }
+              ],
+              "tip": "'Every Tuesday' = een gewoonte → present simple. 'She' → werkwoord + -(e)s: 'goes'.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-ps-002",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct form.",
+              "context": "Please be quiet! The baby …",
+              "options": [
+                {
+                  "text": "is sleeping",
+                  "correct": true
+                },
+                {
+                  "text": "sleeps",
+                  "correct": false,
+                  "feedback": "Het gebeurt nu ('Please be quiet!'), dus present continuous."
+                },
+                {
+                  "text": "sleep",
+                  "correct": false,
+                  "feedback": "Bij 'the baby' (= it) is dit sowieso fout; en het gebeurt nu → 'is sleeping'."
+                }
+              ],
+              "tip": "Het gebeurt op dit moment ('Please be quiet!') → present continuous: is + sleeping.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-ps-003",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct form.",
+              "context": "I … what you mean.",
+              "options": [
+                {
+                  "text": "understand",
+                  "correct": true
+                },
+                {
+                  "text": "am understanding",
+                  "correct": false,
+                  "feedback": "'Understand' is een stative verb en krijgt normaal geen -ing-vorm."
+                },
+                {
+                  "text": "understands",
+                  "correct": false,
+                  "feedback": "Na 'I' komt er geen -s achter het werkwoord."
+                }
+              ],
+              "tip": "'Understand' is een stative verb (denken/weten) → geen -ing-vorm. Na 'I' geen -s: 'I understand'.",
+              "difficulty": 2
+            },
+            {
+              "id": "en-ps-004",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct form.",
+              "context": "Look! It … again.",
+              "options": [
+                {
+                  "text": "is snowing",
+                  "correct": true
+                },
+                {
+                  "text": "snows",
+                  "correct": false,
+                  "feedback": "'Look!' laat zien dat het nu gebeurt; dan gebruik je de present continuous."
+                },
+                {
+                  "text": "snow",
+                  "correct": false,
+                  "feedback": "Bij 'it' is dit fout; en het gebeurt nu → 'is snowing'."
+                }
+              ],
+              "tip": "'Look!' laat zien dat het nu gebeurt → present continuous: 'is snowing'.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-ps-005",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct form.",
+              "context": "My brother … in a hotel this summer, but normally he works in an office.",
+              "options": [
+                {
+                  "text": "is working",
+                  "correct": true
+                },
+                {
+                  "text": "works",
+                  "correct": false,
+                  "feedback": "'This summer' is tijdelijk (normaal werkt hij ergens anders) → present continuous."
+                },
+                {
+                  "text": "work",
+                  "correct": false,
+                  "feedback": "Bij 'my brother' (= he) hoort in de present simple een -s; en het is tijdelijk → 'is working'."
+                }
+              ],
+              "tip": "'This summer' tegenover 'normally' → het is tijdelijk → present continuous: 'is working'.",
+              "difficulty": 2
+            },
+            {
+              "id": "en-ps-006",
+              "type": "true-false",
+              "prompt": "Is this sentence correct?",
+              "context": "Water is boiling at 100 degrees Celsius.",
+              "answer": false,
+              "tip": "Dit is een algemeen feit → present simple: 'Water boils at 100 degrees Celsius.'",
+              "difficulty": 2
+            },
+            {
+              "id": "en-ps-007",
+              "type": "true-false",
+              "prompt": "Is this sentence correct?",
+              "context": "He doesn't like coffee.",
+              "answer": true,
+              "tip": "Ontkenning in de present simple bij he/she/it: doesn't + werkwoord zonder -s: 'doesn't like'.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-ps-008",
+              "type": "fill-in",
+              "prompt": "Fill in the correct form of the verb in brackets.",
+              "context": "Tom never … TV in the morning. (watch)",
+              "answers": [
+                "watches"
+              ],
+              "tip": "'Never' wijst op een gewoonte → present simple. Tom = he → -s, en na -ch schrijf je -es: 'watches'.",
+              "difficulty": 2
+            }
+          ]
+        },
+        {
+          "name": "Some, any, much and many",
+          "theory": "## Some and any\n- **some** in positive sentences: *I have **some** questions.*\n- **some** also in **offers and requests**: *Would you like **some** tea? Can I have **some** water?*\n- **any** in **negative sentences** and ordinary **questions**: *There aren't **any** apples. Do you have **any** questions?*\n\n## Much and many\n- **many** + countable plural: *many books, many students*\n- **much** + uncountable: *much time, much money* (mostly in questions and negatives)\n- **a lot of** works with both, especially in positive sentences: *a lot of books, a lot of time*\n\n## Uncountable nouns\nSome words are uncountable in English but countable in Dutch: *information, advice, furniture, news*. They never get **-s** and you don't use *a/an*: *some information, a piece of advice*.\n\n> Tip (NL): Ontkenning of gewone vraag → any. Aanbod of verzoek → some. Telbaar → many; ontelbaar → much.\n",
+          "questions": [
+            {
+              "id": "en-sa-001",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct word.",
+              "context": "There aren't … apples left.",
+              "options": [
+                {
+                  "text": "any",
+                  "correct": true
+                },
+                {
+                  "text": "some",
+                  "correct": false,
+                  "feedback": "In een ontkennende zin gebruik je 'any'."
+                },
+                {
+                  "text": "much",
+                  "correct": false,
+                  "feedback": "'Apples' is telbaar; 'much' gebruik je bij ontelbare woorden."
+                }
+              ],
+              "tip": "Ontkennende zin ('aren't') → 'any'.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-sa-002",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct word.",
+              "context": "Would you like … more coffee?",
+              "options": [
+                {
+                  "text": "some",
+                  "correct": true
+                },
+                {
+                  "text": "any",
+                  "correct": false,
+                  "feedback": "Bij een aanbod ('Would you like…?') gebruik je 'some', ook al is het een vraag."
+                },
+                {
+                  "text": "many",
+                  "correct": false,
+                  "feedback": "'Coffee' is ontelbaar; 'many' past alleen bij telbare meervouden."
+                }
+              ],
+              "tip": "Een aanbod ('Would you like…?') → 'some', ook al is het een vraag.",
+              "difficulty": 2
+            },
+            {
+              "id": "en-sa-003",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct word.",
+              "context": "How … students are there in your class?",
+              "options": [
+                {
+                  "text": "many",
+                  "correct": true
+                },
+                {
+                  "text": "much",
+                  "correct": false,
+                  "feedback": "'Students' is telbaar; dan gebruik je 'many'."
+                },
+                {
+                  "text": "any",
+                  "correct": false,
+                  "feedback": "Na 'How' vraag je naar een aantal: 'How many'."
+                }
+              ],
+              "tip": "'Students' is telbaar en meervoud → 'many': 'How many students'.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-sa-004",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct word.",
+              "context": "We don't have … time before the train leaves.",
+              "options": [
+                {
+                  "text": "much",
+                  "correct": true
+                },
+                {
+                  "text": "many",
+                  "correct": false,
+                  "feedback": "'Time' is hier ontelbaar; dan gebruik je 'much'."
+                },
+                {
+                  "text": "some",
+                  "correct": false,
+                  "feedback": "In een ontkennende zin gebruik je geen 'some'."
+                }
+              ],
+              "tip": "'Time' is ontelbaar en de zin is ontkennend → 'much'.",
+              "difficulty": 2
+            },
+            {
+              "id": "en-sa-005",
+              "type": "true-false",
+              "prompt": "Is this sentence correct?",
+              "context": "I need some informations about the course.",
+              "answer": false,
+              "tip": "'Information' is in het Engels ontelbaar: geen meervouds-s → 'some information'.",
+              "difficulty": 2
+            },
+            {
+              "id": "en-sa-006",
+              "type": "true-false",
+              "prompt": "Is this sentence correct?",
+              "context": "Have you got any questions?",
+              "answer": true,
+              "tip": "Een gewone vraag → 'any': 'Have you got any questions?' is goed.",
+              "difficulty": 1
+            },
+            {
+              "id": "en-sa-007",
+              "type": "multiple-choice",
+              "prompt": "Choose the correct words.",
+              "context": "She has read … books about climate change.",
+              "options": [
+                {
+                  "text": "a lot of",
+                  "correct": true
+                },
+                {
+                  "text": "much",
+                  "correct": false,
+                  "feedback": "'Much' past niet bij een telbaar meervoud als 'books'."
+                },
+                {
+                  "text": "a lot",
+                  "correct": false,
+                  "feedback": "Voor een zelfstandig naamwoord hoort 'a lot of'."
+                }
+              ],
+              "tip": "'Books' is telbaar en de zin is bevestigend → 'a lot of' (of 'many'). 'Much' past niet bij telbare woorden.",
+              "difficulty": 2
+            },
+            {
+              "id": "en-sa-008",
+              "type": "fill-in",
+              "prompt": "Fill in 'some' or 'any'.",
+              "context": "Is there … milk in the fridge?",
+              "answers": [
+                "any"
+              ],
+              "tip": "Een gewone vraag (geen aanbod of verzoek) → 'any'.",
+              "difficulty": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "title": "Oefentoets werkwoordspelling",
+      "description": "15 willekeurige vragen over de tegenwoordige tijd, de verleden tijd en het voltooid deelwoord. Je ziet je resultaat pas aan het eind. Je hebt 20 minuten; je haalt de toets met 80% goed.",
+      "mode": "exam",
+      "timeLimitMinutes": 20,
+      "passPercentage": 80,
+      "randomQuestionCount": 15,
+      "shuffleQuestions": true,
+      "topics": [
+        "Nederlands – taalverzorging (demo)/Werkwoordspelling: tegenwoordige tijd",
+        "Nederlands – taalverzorging (demo)/Werkwoordspelling: verleden tijd en voltooid deelwoord"
+      ]
+    },
+    {
+      "title": "Mix taalverzorging",
+      "description": "10 willekeurige vragen uit alle onderwerpen van taalverzorging, met na elke vraag direct feedback en een tip.",
+      "mode": "practice",
+      "passPercentage": 80,
+      "randomQuestionCount": 10,
+      "shuffleQuestions": true,
+      "topics": [
+        "Nederlands – taalverzorging (demo)/Werkwoordspelling: tegenwoordige tijd",
+        "Nederlands – taalverzorging (demo)/Werkwoordspelling: verleden tijd en voltooid deelwoord",
+        "Nederlands – taalverzorging (demo)/Spelling: samenstellingen, tussen-s en streepjes",
+        "Nederlands – taalverzorging (demo)/Zinsbouw en verwijswoorden"
+      ]
+    }
+  ]
+}
