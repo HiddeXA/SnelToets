@@ -1,0 +1,40 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <header class="topbar">
+        <a class="brand" href="">
+            <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M9 17.5l4.5 4.5L23 11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>SnelToets</span>
+        </a>
+        <nav class="nav-desktop" aria-label="Hoofdmenu">
+            <NavLink href="" Match="NavLinkMatch.All">Oefenen</NavLink>
+            <NavLink href="toetsen">Toetsen</NavLink>
+            <NavLink href="beheer">Beheer</NavLink>
+        </nav>
+    </header>
+
+    <main class="page">
+        @Body
+    </main>
+
+    <nav class="nav-mobile" aria-label="Hoofdmenu">
+        <NavLink href="" Match="NavLinkMatch.All">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9l8-5 8 5v10a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>
+            <span>Oefenen</span>
+        </NavLink>
+        <NavLink href="toetsen">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm6 1.5V9h4.5M9 13h6M9 17h6"/></svg>
+            <span>Toetsen</span>
+        </NavLink>
+        <NavLink href="beheer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.6 7.6 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.6 7.6 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>
+            <span>Beheer</span>
+        </NavLink>
+    </nav>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Er ging iets mis.
+    <a href="." class="reload">Opnieuw laden</a>
+    <span class="dismiss">✕</span>
+</div>

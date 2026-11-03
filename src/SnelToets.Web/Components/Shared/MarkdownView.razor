@@ -1,0 +1,15 @@
+@* Renders Markdown (theory, tips, prompts) as safe HTML. Inline=true drops the wrapping paragraph. *@
+@if (Inline)
+{
+    <span class="@Class">@((MarkupString)Markdown.ToInlineHtml(Text))</span>
+}
+else
+{
+    <div class="prose @Class">@((MarkupString)Markdown.ToHtml(Text))</div>
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public bool Inline { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

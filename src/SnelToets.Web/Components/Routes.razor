@@ -1,0 +1,17 @@
+﻿@inject LearnerSession Learner
+
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+
+@code {
+    [Parameter] public Guid LearnerId { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (LearnerId != Guid.Empty) Learner.Id = LearnerId;
+    }
+}

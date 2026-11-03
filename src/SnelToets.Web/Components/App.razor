@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3056d3" />
+    <meta name="description" content="SnelToets: oefen slim voor je toetsen, op je laptop of telefoon." />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["SnelToets.Web.styles.css"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" LearnerId="learnerId" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["app.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+    private Guid learnerId;
+
+    protected override void OnInitialized()
+    {
+        if (HttpContext is not null && Infrastructure.LearnerCookieMiddleware.TryGet(HttpContext, out var id))
+            learnerId = id;
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "SnelToets",
+  "short_name": "SnelToets",
+  "description": "Oefen slim voor je toetsen, op je laptop of telefoon.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#3056d3",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
